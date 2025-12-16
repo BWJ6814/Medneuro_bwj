@@ -13,8 +13,18 @@
     <title>Insert title here</title>
     <link rel="stylesheet" href="/com/bootstrap.min.css">
     <style>
-        td {
-            text-align: center;
+        body{
+            display: flex;
+        }
+        #main{
+            width : 100%;
+            min-height : 100vh;
+            background-image: url("/images/req1.png");
+            background-size: 100% 200vh;
+            background-repeat: no-repeat;
+            background-position: 0px 0px;
+
+
         }
     </style>
     <script src="/com/jquery-3.7.1.js"></script>
@@ -27,8 +37,9 @@
 </head>
 
 <body>
-<div class="jumbotron text-center">
-    <h2>회원가입 페이지</h2>
-</div>
+    <div id="main">
+
+
+    </div>
 </body>
 </html>
