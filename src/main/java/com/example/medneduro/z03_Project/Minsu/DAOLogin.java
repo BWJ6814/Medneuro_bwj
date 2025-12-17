@@ -20,3 +20,4 @@ public interface DAOLogin {
     int checkId(String id) ;
 
 }
+
