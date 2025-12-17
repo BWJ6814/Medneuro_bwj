@@ -56,7 +56,7 @@
 
 
             $("input[name='birthDate']").keyup(function(){
-                if($(this).val().length >= 6) {
+                if($(this).val().length >= 8) {
                     $("input[name='gender']").focus();
                 }
             });
@@ -93,7 +93,7 @@
                 if(name == "") { alert("이름을 입력해주세요."); $("input[name='name']").focus(); return; }
 
                 // 주민번호 검사
-                if(birthDate.length != 6 || gender.length != 1) {
+                if(birthDate.length != 8 || gender.length != 1) {
                     alert("주민등록번호를 올바르게 입력해주세요.");
                     $("input[name='birthDate']").focus();
                     return;
@@ -103,7 +103,6 @@
                 if(!isAgreed) { alert("개인정보 수집 및 이용에 동의해주세요."); $("#agreeCheck").focus(); return; }
 
                 if(confirm("가입하시겠습니까?")){
-                    $("#final_rrn").val(full_rrn);
                     $("form").submit();
                 }
             });
@@ -189,7 +188,7 @@
             <div class="mb-3">
                 <label class="form-label">주민등록번호</label>
                 <div class="d-flex align-items-center gap : 50px">
-                    <input type="text" name="birthDate" class="form-control text-center" maxlength="6" placeholder="생년월일(6자리)">
+                    <input type="text" name="birthDate" class="form-control text-center" maxlength="8" placeholder="생년월일(8자리)">
                     <span class="text-white mx-2" >─</span>
                     <input type="text" name="gender" class="form-control text-center" maxlength=1" placeholder="주민번호 뒷번호 1자리">
                 </div>
