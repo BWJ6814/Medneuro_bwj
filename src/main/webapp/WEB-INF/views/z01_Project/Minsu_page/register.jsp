@@ -190,7 +190,7 @@
                 <div class="d-flex align-items-center gap : 50px">
                     <input type="text" name="birthDate" class="form-control text-center" maxlength="8" placeholder="생년월일(8자리)">
                     <span class="text-white mx-2" >─</span>
-                    <input type="text" name="gender" class="form-control text-center" maxlength=1" placeholder="주민번호 뒷번호 1자리">
+                    <input type="text" name="gender" class="form-control text-center" maxlength="1" placeholder="주민번호 뒷번호 1자리">
                 </div>
             </div>
 
