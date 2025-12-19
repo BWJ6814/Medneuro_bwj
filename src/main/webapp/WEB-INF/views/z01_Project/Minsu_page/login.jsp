@@ -200,11 +200,10 @@
     <div class="card-left">
         <div class="brand-title">MadNeduro</div>
         <p class="brand-desc">
-            환자 관리와 진료 예약을 위한<br>
+            환자 관리을 위한<br>
             통합 의료 정보 시스템
         </p>
         <ul class="feature-list">
-            <li>실시간 진료 예약</li>
             <li>환자 의료 기록 관리</li>
             <li>AI 기반 진단 보조</li>
             <li>안전한 데이터 보안</li>
