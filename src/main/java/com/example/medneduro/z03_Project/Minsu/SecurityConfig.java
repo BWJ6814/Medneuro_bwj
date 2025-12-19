@@ -45,13 +45,28 @@ public class SecurityConfig {
                 자바 8부터 도입된 문법 람다식으로 해당 값을 받아서(input) -> 이렇게 처리해(Action)라는 의미
                 csrf 객체를 받아서 -> 기능을 끄거나 켜라!
                 */
-                .csrf(withDefaults())
+
+                // 12월 19일 수정.csrf(withDefaults())
                 // 요청에 대한 권한(Authorize) 설정!
+
+                /* 임시 수정 하겠습니다. 12월 19일 김민수..
                 .authorizeHttpRequests(auth -> auth
                         // 어떤 any 요청이든 상관 없다!
                         .anyRequest()
                         // 모두에게 허용! - permit All 해달라!
                         .permitAll()
+                );
+                */
+                .csrf(csrf -> csrf.disable())
+
+                // CORS 설정 적용 (CorsConfig 클래스 설정 따라감)
+                .cors(withDefaults())
+
+                // ★ [수정 2] /api/로 시작하는 주소는 로그인 없이 허용
+                .authorizeHttpRequests(auth -> auth
+                        // "/api/**" 경로는 누구나(permitAll) 접근 가능하게 설정
+                        .requestMatchers("/api/**", "/css/**", "/js/**", "/images/**").permitAll()
+                        .anyRequest().permitAll() // 혹은 개발 중이니 전체 허용
                 );
 
         return http.build();
