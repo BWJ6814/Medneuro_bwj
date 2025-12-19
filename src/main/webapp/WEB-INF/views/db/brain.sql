@@ -169,7 +169,6 @@ CREATE TABLE BRAIN_MRI_FOLDER (
                                   GENERAL_ID          VARCHAR2(20),
                                   IMAGE_FOLDER_PATH   VARCHAR2(255),
                                   UPLOAD_DT           DATE          DEFAULT SYSDATE,
-                                  LOG_ID              NUMBER         NOT NULL,
                                   TOTAL_SLICES        NUMBER,
                                   STATUS              VARCHAR2(20),
                                   AI_ANALYSIS_STATUS  VARCHAR2(20),
@@ -180,9 +179,7 @@ CREATE TABLE BRAIN_MRI_FOLDER (
                                   CONSTRAINT FK_MRI_DOCTOR FOREIGN KEY (DOCTOR_ID)
                                       REFERENCES MEDICAL_STAFF(STAFF_ID),
                                   CONSTRAINT FK_MRI_GENERAL FOREIGN KEY (GENERAL_ID)
-                                      REFERENCES GENERAL(GENERAL_ID),
-                                  CONSTRAINT FK_MRI_LOG FOREIGN KEY (LOG_ID)
-                                      REFERENCES SYSTEM_LOG(LOG_ID)
+                                      REFERENCES GENERAL(GENERAL_ID)
 );
 
 -- MRI 인덱스
@@ -199,6 +196,7 @@ CREATE TABLE MRI_ACCESS_LOG (
                                 CONSTRAINT PK_MRI_ACCESS_LOG PRIMARY KEY (LOG_ID),
                                 CONSTRAINT FK_LOG_MRI FOREIGN KEY (MRI_ID) REFERENCES BRAIN_MRI_FOLDER(MRI_ID)
 );
+CREATE INDEX IX_LOG_MRI_ID ON MRI_ACCESS_LOG(MRI_ID);
 
 -- [8] 분석 테이블: DIAGNOSIS_REPORT
 CREATE TABLE DIAGNOSIS_REPORT (
