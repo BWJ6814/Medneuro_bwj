@@ -105,12 +105,12 @@
                 if(name == "") { alert("이름을 입력해주세요."); $("input[name='name']").focus(); return; }
 
                 if(userType == 'doctor') {
-                    var licenseId = $("input[name='licenseId']").val();
+                    var licenseNo = $("input[name='licenseNo']").val();
                     var deptId = $("input[name='deptId']").val();
 
-                    if(licenseId == "") {
+                    if(licenseNo == "") {
                         alert("의사 면허 번호를 입력해주세요.");
-                        $("input[name='licenseId']").focus();
+                        $("input[name='licenseNo']").focus();
                         return;
                     }
                     if(deptId == "") {
@@ -197,7 +197,7 @@
             <div id="doctorFields" style="display: none;">
                 <div class="mb-3">
                     <label class="form-label text-white">의사 면허 번호</label>
-                    <input type="text" name="licenseId" class="form-control" placeholder="면허 번호 입력">
+                    <input type="text" name="licenseNo" class="form-control" placeholder="면허 번호 입력">
                 </div>
                 <div class="mb-3">
                     <label class="form-label text-white">부서 번호</label>
