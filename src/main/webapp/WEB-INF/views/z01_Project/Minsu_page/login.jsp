@@ -21,20 +21,14 @@
             width: 100%;
             font-family: 'Noto Sans KR', sans-serif;
             overflow: hidden;
-
-            /* 배경 이미지 설정 */
             background-image: url("/images/req2.png");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-
-            /* 중앙 정렬을 위한 Flexbox */
             display: flex;
             justify-content: center;
             align-items: center;
         }
-
-        /* 배경 위에 어두운 막을 씌워 카드 집중도 향상 */
         body::before {
             content: "";
             position: absolute;
@@ -44,7 +38,6 @@
             z-index: -1;
         }
 
-        /* 2. 중앙 플로팅 카드 (핵심) */
         .login-card {
             width: 900px;  /* 카드의 전체 너비 */
             height: 550px; /* 카드의 전체 높이 */
@@ -56,11 +49,10 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* 3. 카드 왼쪽: 브랜드 영역 (레퍼런스의 파란 부분 -> 다크 그라데이션으로 변경) */
         .card-left {
             width: 50%;
             padding: 50px;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* 고급스러운 다크 블루 그라데이션 */
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
             color: white;
             display: flex;
             flex-direction: column;
@@ -68,7 +60,6 @@
             position: relative;
         }
 
-        /* 장식용 원 (레퍼런스의 배경 무늬 흉내) */
         .card-left::after {
             content: "";
             position: absolute;
@@ -92,7 +83,6 @@
             line-height: 1.6;
         }
 
-        /* 기능 리스트 아이콘 스타일 */
         .feature-list { list-style: none; padding: 0; }
         .feature-list li {
             margin-bottom: 15px;
@@ -104,21 +94,19 @@
         .feature-list li::before {
             content: "✔";
             margin-right: 10px;
-            color: #0d6efd; /* 파란색 체크 */
+            color: #0d6efd;
             font-weight: bold;
         }
 
-        /* 4. 카드 오른쪽: 로그인 폼 영역 */
         .card-right {
             width: 50%;
             padding: 50px;
-            background-color: #1a1a20; /* 폼 배경은 아주 어두운 색 */
+            background-color: #1a1a20;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
 
-        /* 로그인 폼 제목 */
         .login-header {
             font-size: 1.8rem;
             font-weight: bold;
@@ -126,7 +114,6 @@
             margin-bottom: 30px;
         }
 
-        /* 입력창 스타일 (다크 테마) */
         .form-control {
             background-color: #2b2b3b;
             border: 1px solid #444;
@@ -237,6 +224,7 @@
         </ul>
 
         <form action="/loginProc" method="post">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
             <input type="hidden" name="userType" id="userType" value="general">
 
             <div class="mb-3">
