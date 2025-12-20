@@ -688,5 +688,82 @@ body{
 .modal-body::-webkit-scrollbar-thumb:hover {
     background: #48484A; /* 호버 시 아주 살짝 밝아지게 */
 }
+/* --- 사이드 드로어 스타일 --- */
+/* 배경 어둡게 처리 */
+.drawer-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none; /* 기본 숨김 */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.drawer-overlay.show {
+    display: block;
+    opacity: 1;
+}
+
+/* 드로어 본체 */
+.side-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px; /* 화면 밖으로 숨김 */
+    width: 350px;
+    height: 100%;
+    background-color: #262629; /* 메인 테마색 */
+    box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+    z-index: 1001;
+    transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* 부드러운 애니메이션 */
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #3A3A3C;
+}
+
+.side-drawer.open {
+    right: 0; /* 활성화 시 나옴 */
+}
+
+/* 드로어 내부 디자인 */
+.drawer-header {
+    padding: 20px;
+    border-bottom: 1px solid #3A3A3C;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+.drawer-header h3 { margin: 0; font-size: 1.2rem; }
+.close-drawer-btn {
+    background: none; border: none; color: #bdc3c7;
+    font-size: 2rem; cursor: pointer; line-height: 1;
+}
+.close-drawer-btn:hover { color: white; }
+
+.drawer-body {
+    flex: 1;
+    overflow-y: auto; /* 내용 길어지면 스크롤 */
+    padding: 0;
+}
+
+/* 리스트 아이템 스타일 */
+.recent-list {
+    list-style: none; padding: 0; margin: 0;
+}
+.recent-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #3A3A3C;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.recent-item:hover { background-color: #3A3A3C; }
+
+.ri-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 5px;
+}
+.ri-name { font-weight: bold; color: #ecf0f1; font-size: 1.05rem; }
+.ri-info { color: #bdc3c7; font-size: 0.9rem; margin-bottom: 3px; }
+.ri-date { color: #7f8c8d; font-size: 0.8rem; text-align: right; }
 
 

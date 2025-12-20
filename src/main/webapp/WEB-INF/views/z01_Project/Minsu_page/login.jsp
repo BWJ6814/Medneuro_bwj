@@ -222,7 +222,7 @@
             </li>
         </ul>
 
-        <form action="/loginProc" method="post">
+        <form action="" method="post">
             <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
             <input type="hidden" name="userType" id="userType" value="general">
 

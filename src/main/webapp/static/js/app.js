@@ -99,10 +99,31 @@ $(document).ready(function () {
   });
 
   // ✅ 2D로 돌아가기
+
   $("#btnBackTo2D").on("click", function () {
     $("#view3D").addClass("hidden");
     $("#analysis2DView").removeClass("hidden");
   });
+
+  // 최근 분석 리스트
+    const $drawer = $('#recentDrawer');
+    const $overlay = $('#recentDrawerOverlay');
+
+    // 1. '최근 분석 보기' 버튼 클릭 시 열기
+    $('#btnRecent').on('click', function() {
+        $overlay.addClass('show'); // 배경 어둡게
+        setTimeout(() => {
+            $drawer.addClass('open'); // 드로어 슬라이드
+        }, 10); // 약간의 지연으로 애니메이션 트리거
+    });
+
+    // 2. 닫기 버튼 또는 배경 클릭 시 닫기
+    $('#btnCloseDrawer, #recentDrawerOverlay').on('click', function() {
+        $drawer.removeClass('open');
+        setTimeout(() => {
+            $overlay.removeClass('show');
+        }, 300); // 애니메이션 시간(0.3s) 만큼 대기 후 배경 숨김
+    });
 
   // ✅ 초기 화면
   showUploadView();
