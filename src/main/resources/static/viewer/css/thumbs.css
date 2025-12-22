@@ -1,0 +1,91 @@
+/* ✅ (수정 3) 썸네일 바 + 토글 버튼 */
+.thumbbar{
+    border-top:1px solid var(--line);
+    border-radius:12px;
+    background:rgba(0,0,0,0.35);
+    overflow:hidden;
+    transition:max-height 220ms ease;
+    max-height: var(--thumbbar-open);
+}
+
+/* thumbbar 헤더 */
+.thumbbar-head{
+    height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 10px;
+    border-bottom:1px solid rgba(255,255,255,0.1);
+    background: rgba(0, 0, 0, 0.25);
+}
+.thumbbar-title{
+    font-size:12px;
+    opacity:0.75;
+    letter-spacing:0.6px;
+}
+
+/* 토글 버튼(▲/▼) */
+.thumb-toggle{
+    width:36px;
+    height:28px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:#1f2127;
+    color:#fff;
+    cursor:pointer;
+    font-weight:900;
+}
+.thumb-toggle:hover{
+    background:rgba(255,255,255,0.07);
+}
+
+.thumb-list{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:10px;
+    padding-bottom:12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.thumb{
+    width:110px;
+    height:80px;
+    border-radius:10px;
+    border:2px solid rgba(255, 255, 255, 0.1);
+    border:2px solid transparent;
+    overflow:hidden;
+    flex:0 0 auto;
+    background:#0e1014;
+    cursor:pointer;
+}
+.thumb img{ width:100%; height:100%; object-fit:cover; }
+.thumb.active{ border-color:#8aa4ff; }
+
+.thumb-list::-webkit-scrollbar {
+    height: 8px;
+}
+
+.thumb-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.thumb-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.thumb-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* ✅ 썸네일 접힘 상태:
+   - 리스트 숨기고, 바 높이 줄어듦
+   - 이미지 영역은 flex로 자동 확장(= 커졌다) */
+#analysis2DView.thumbs-collapsed .thumbbar{
+    max-height: var(--thumbbar-collapsed);
+}
+#analysis2DView.thumbs-collapsed .thumb-list{
+    display:none;
+}

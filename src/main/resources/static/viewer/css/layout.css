@@ -1,0 +1,254 @@
+/* ✅ 탭바: “딱 붙는 탭” 느낌 */
+.tabsbar{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:0;
+    min-width:0;
+}
+
+.tabs{
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:0;
+    overflow-x:auto;
+    min-width:0;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:#1f2127;
+}
+
+.tab{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 10px;
+    border-right:1px solid var(--line);
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+}
+.tab:last-child{ border-right:none; }
+
+.tab-name{
+    font-size:13px;
+    color:rgba(231,233,238,0.65);
+}
+.tab.active{ background:rgba(255,255,255,0.06); }
+.tab.active .tab-name{
+    color:#ffffff;
+    font-weight:700;
+}
+
+.tab-close{
+    border:none;
+    background:transparent;
+    color:rgba(231,233,238,0.55);
+    cursor:pointer;
+    font-size:14px;
+    line-height:1;
+    padding:2px 4px;
+    border-radius:6px;
+}
+.tab-close:hover{
+    background:rgba(255,255,255,0.08);
+    color:#fff;
+}
+
+.tab-plus{
+    margin-left:10px;
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:#1f2127;
+    color:#fff;
+    cursor:pointer;
+}
+.tab-plus:hover{ background:rgba(255,255,255,0.07); }
+
+/* ✅ 공통 버튼 */
+.btn{
+    border:1px solid var(--line);
+    background:#3a3f4a;
+    color:var(--text);
+    padding:10px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.btn.axis {
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border:1px solid var(--line);
+    background:black;
+    border-radius:10px;
+    cursor:pointer;
+    flex: 1; /* 버튼들이 균등하게 공간 분할 */
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position:relative;
+}
+
+.btn.axis::before {
+    content: attr(data-axis);
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn.axis:hover{
+    background:black;
+    border : 1px solid white;
+}
+
+/* 버튼 안의 이미지 */
+.btn.axis img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain; /* 비율 유지하며 맞춤 */
+}
+
+.btn:hover{ background:#4a5160; }
+.btn.big{ padding:14px 12px; }
+
+/* ✅ 레이아웃: (수정 1) “윗줄=탭바 / 아랫줄=본 레이아웃” */
+.layout{
+    position:relative;
+    flex:1;
+    display:grid;
+    gap:12px;
+    padding:12px;
+
+    /* ✅ 2행: 1행 탭바, 2행 본문 */
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+
+    transition: grid-template-columns 240ms ease;
+}
+
+/* ✅ 펼친 상태 */
+.layout.tools-open{
+    grid-template-columns: var(--iconbar-w) var(--toolpanel-w) 1fr var(--rightbar-w);
+}
+
+/* ✅ 접은 상태 */
+.layout.tools-collapsed{
+    grid-template-columns: var(--iconbar-w) 0px 1fr var(--rightbar-w);
+}
+
+/* ✅ (수정 1) layoutRoot 1행: 탭바 */
+.layout-top{
+    grid-row:1;
+    grid-column:1 / -1;
+
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:10px;
+    display:flex;
+    align-items:center;
+}
+
+.layout.upload-mode{
+    grid-template-columns:
+    var(--iconbar-w)
+    1fr
+    220px
+}
+
+/* ✅ 2행에 배치될 요소들 */
+.iconbar,
+.tool-panel,
+.main,
+.rightbar{
+    grid-row:2;
+}
+
+/* ✅ 왼쪽 얇은 바 */
+.iconbar{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.iconbar-title{
+    writing-mode:vertical-rl;
+    opacity:0.7;
+    font-size:12px;
+    letter-spacing:2px;
+}
+
+/* ✅ 튀어나오는 툴 패널 */
+.tool-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    transition: transform 240ms ease, opacity 240ms ease;
+    display:flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+.layout.tools-collapsed .tool-panel{
+    opacity:0;
+    transform: translateX(-12px);
+    pointer-events:none;
+}
+
+.tool-panel-head{
+    padding:12px;
+    font-weight:800;
+    border-bottom:1px solid var(--line);
+    background:rgba(0,0,0,0.08);
+    flex-shrink: 0;
+}
+.tool-buttons{
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    overflow: hidden; /* 추가 - 스크롤 가능하게 */
+    flex: 1; /* 추가 - 남은 공간 모두 차지 */
+    min-height: 0; /* 추가 - flex 자식이 넘치지 않게 */
+
+}
+
+/* ✅ 중앙 main */
+.main{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    padding:12px;
+    display:flex;
+    min-height: 0;
+}
+
+.panel{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    min-height: 0;
+}

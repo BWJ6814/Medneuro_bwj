@@ -1,0 +1,52 @@
+/* ✅ 오른쪽 바 */
+.rightbar{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+.info-card{
+    height:120px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,0.12);
+    padding:12px;
+    color:rgba(231,233,238,0.75);
+}
+.right-actions{
+    margin-top:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+/* ✅ 접기/펼치기 핸들 */
+.tool-handle{
+    position:absolute;
+    top:470px;
+    width:var(--handle-w);
+    height:90px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:#fff;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    transition: left 240ms ease;
+}
+
+/* 펼쳤을 때 */
+.layout.tools-open .tool-handle{
+    left: calc(var(--iconbar-w) + var(--toolpanel-w) - (var(--handle-w) / 2) + 12px);
+}
+/* 접었을 때 */
+.layout.tools-collapsed .tool-handle{
+    left: calc(var(--iconbar-w) - (var(--handle-w) / 2) + 12px);
+}
