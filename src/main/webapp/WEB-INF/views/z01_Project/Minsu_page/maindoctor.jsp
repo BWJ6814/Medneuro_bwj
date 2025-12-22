@@ -134,6 +134,8 @@
     </div>
 </div>
 
+
+<!-- 이하 모달-->
 <div id="myModal" class="modal-overlay">
     <div class="modal-window">
         <div class="modal-header">
@@ -192,7 +194,7 @@
             name: "${mri.patientName}",   // 환자 이름
             gender: "${mri.gender}",      // 성별 (필요시)
             birth: "${mri.birthDate}",    // 생년월일 (필요시)
-            fileName: "${mri.name}"       // 파일명
+            fileName: "${mri.fileName}"       // 파일명
         }<c:if test="${!status.last}">,</c:if>
         </c:forEach>
     ];
