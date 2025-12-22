@@ -21,7 +21,7 @@ public class ControllerLogin {
         return "z01_Project/Minsu_page/login";
     }
 
-    @PostMapping("loginProc")
+    @PostMapping("loginpage")
     public String loginProcess(@RequestParam(name="id", defaultValue = "") String id,
                                @RequestParam(name="pwd", defaultValue = "") String pwd,
                                @RequestParam(name="userType", defaultValue = "") String userType,
@@ -50,14 +50,30 @@ public class ControllerLogin {
     // ... (페이지 이동 매핑 유지) ...
     @GetMapping("maindoctorpage")
     public String maindoctorpage() { return "z01_Project/Minsu_page/maindoctor"; }
+    public String maindoctorpage(Model d) {
+
+        return "z01_Project/Minsu_page/maindoctor";
+    }
+    // return으로 페이지 전환
+
     @GetMapping("maingeneralpage")
-    public String maingeneralpage() { return "z01_Project/Minsu_page/maingeneral"; }
+    public String maingeneralpage(Model d) {
+
+
+        return "z01_Project/Minsu_page/maingeneral";
+    }
     @GetMapping("registerPage")
     public String registerPage() { return "z01_Project/Minsu_page/register"; }
+
+    //http://localhost:8080/registerPage
 
 
     // ★ 회원가입 처리 (수정됨)
     @PostMapping("registerProc")
+
+    // ★ 회원가입 처리 (수정 완료 버전)
+    @PostMapping("registerPage")
+
     public String registerProc(Register register, RedirectAttributes d) {
         // 서비스 결과(String) 받기
         String result = service.registerProc(register);
@@ -91,5 +107,19 @@ public class ControllerLogin {
             return "중복된 아이디입니다.";
         }
     }
+
+
+
+
+
+
+    // http://localhost:8080/test1Page
+    @GetMapping("test1Page")
+    public String test1Page() {return "z01_Project/Minsu_page/test1";}
+
+    // http://localhost:8080/test2Page
+    @GetMapping("test2Page")
+    public String test2Page() {return "z01_Project/Minsu_page/test2";}
+
 }
 
