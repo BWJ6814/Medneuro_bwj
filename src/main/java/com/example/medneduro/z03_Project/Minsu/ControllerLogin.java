@@ -1,14 +1,18 @@
 package com.example.medneduro.z03_Project.Minsu;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 
 // 푸쉬테스트 # 작성자 변운조
@@ -17,7 +21,10 @@ public class ControllerLogin {
     @Autowired(required = false)
     private ServiceLogin service;
     // http://localhost:8080/loginpage
-    // ... (로그인 관련 코드는 기존 유지) ...
+
+    // mri 리스트를 가져오기 위한 서비스!
+
+
     @GetMapping("loginpage")
     public String loginpage() {
         return "z01_Project/Minsu_page/login";
@@ -127,8 +134,16 @@ public class ControllerLogin {
         }
     }
 
+    // http://localhost:8080/mainDoctor
+    @GetMapping("mainDoctor")
+    public String listPatients(HttpServletRequest request, Model d){
+        HttpSession session = request.getSession();
+        String loginId =  (String) session.getAttribute("id");
 
-
+        List<MriListM> list = service.getMyMriList(loginId);
+        d.addAttribute("patientList", list);
+        return "z01_Project/Minsu_page/maindoctor";
+    }
 
 
 
