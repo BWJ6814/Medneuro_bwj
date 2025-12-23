@@ -188,8 +188,8 @@ body{
   position:relative;
   flex:1;
   display:grid;
-  gap:12px;
-  padding:12px;
+  /*gap:12px;*/
+  /*padding:12px;*/
 
   /* ✅ 2행: 1행 탭바, 2행 본문 */
   grid-template-rows: auto 1fr;
@@ -215,7 +215,7 @@ body{
 
   background:var(--panel);
   border:1px solid var(--line);
-  border-radius:var(--radius);
+  /*border-radius:var(--radius);*/
   padding:10px;
   display:flex;
   align-items:center;
@@ -236,20 +236,66 @@ body{
   grid-row:2;
 }
 
+/* 2025-12-23  아이콘 추가 */
 /* ✅ 왼쪽 얇은 바 */
 .iconbar{
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    gap: 10px;
 }
-.iconbar-title{
-  writing-mode:vertical-rl;
-  opacity:0.7;
-  font-size:12px;
-  letter-spacing:2px;
+
+/* 2025-12-23  아이콘 추가 */
+.iconbar button {
+    all: unset;                /* ⭐ 버튼 기본 스타일 제거 */
+    width: 50px;
+    height: 50px;              /* 🔥 이게 핵심 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+/* 2025-12-23  아이콘 추가 */
+
+.iconbar .material-symbols-outlined {
+    display: block;
+    font-size: 30px;
+    line-height: 1;
+
+    color: #bfc6d1; /* 기본 아이콘 색 */
+
+    transition: color 0.15s ease;
+
+    font-variation-settings:
+            "FILL" 0,
+            "wght" 500,
+            "GRAD" 0,
+            "opsz" 35;
+}
+
+/* 버튼 hover 시 아이콘 강조 */
+.iconbar button:hover .material-symbols-outlined {
+    color: #ffffff;
+}
+
+
+/* 2025-12-23  아이콘 추가 */
+.iconbar .material-symbols-outlined {
+    display: block;            /* inline 영향 제거 */
+    font-size: 30px;           /* 이제 진짜 반영됨 */
+    line-height: 1;
+
+    font-variation-settings:
+            "FILL" 0,
+            "wght" 500,
+            "GRAD" 0,
+            "opsz" 35;
 }
 
 /* ✅ 튀어나오는 툴 패널 */

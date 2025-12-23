@@ -9,7 +9,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>MedNeuro - NII 2D/3D Viewer</title>
-
+    <link rel="stylesheet"href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined">
     <link rel="stylesheet" href="${path}/static/css/style.css"/>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -21,6 +21,8 @@
           }
         }
     </script>
+
+
 
     <script type="module">
         import * as THREE from "three";
@@ -37,7 +39,7 @@
 <div class="app">
 
     <header class="topbar">
-        <div class="brand" onclick="location.href='${path}/viewer/index.html'" style="cursor:pointer;">MedNeuro</div>
+        <div class="brand" onclick="location.href='${path}/maindoctorpage'" style="cursor:pointer;">MedNeuro</div>
         <button id="btnRecent" class="btn">최근 분석 보기</button>
     </header>
 
@@ -51,7 +53,9 @@
         </div>
 
         <aside class="iconbar">
-            <div class="iconbar-title">TOOLS</div>
+            <button id="2dBtn"><span class="material-symbols-outlined">replace_image</span>2D</button>
+            <button id="3dBtn"><span class="material-symbols-outlined">deployed_code</span>3D</button>
+            <button id="commentBtn"><span class="material-symbols-outlined">edit_square</span></button>
         </aside>
 
         <aside id="toolPanel" class="tool-panel hidden">
