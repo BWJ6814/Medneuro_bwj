@@ -699,19 +699,46 @@ document.addEventListener('DOMContentLoaded', function() {
             // (3) 클릭 이벤트 달기 (여기서 해야 함!)
             li.addEventListener('click', function() {
                 // 메인 화면 업데이트
-                if(mainFileNameDisplay) {
+                if (mainFileNameDisplay) {
                     mainFileNameDisplay.textContent = p.fileName;
                     mainFileNameDisplay.style.color = "#4CAF50";
                     mainFileNameDisplay.style.fontWeight = "bold";
                 }
 
-                // 파일 로드 알림 (추후 loadNiftiFromUrl(p.fileName) 등으로 교체)
-                alert(p.name + " 님의 영상(" + p.fileName + ")을 불러옵니다.");
-                console.log("선택된 파일:", p.fileName);
+                // 서버 리소스 경로 만들기
+                // WebConfig에서 "/mri-file/" 패턴을 연결해두었기 때문에
+                // db에 저장된 p.fileName이 "brain.bill"같은 파일명이어야 함
+                // 만일 "C:\..." 같은 전체 경로라면 파일명만 잘라내야 합니다. -- 우리가 할 것..
+                const resourceUrl = `/mri-file/${p.fileName}`;
 
-                closeModal(); // 모달 닫기
+
+                // 파일 가져오기 (Fetch API)
+                fetch(resourceUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`파일을 찾을 수 없습니다. (URL: ${resourceUrl})`);
+                        }
+                        return response.blob(); // 파일 데이터를 Blob(덩어리) 형태로 받음
+                    })
+                    .then(blob => {
+                        // 4. Blob 데이터를 자바스크립트 File 객체로 변환
+                        // (마치 사용자가 방금 드래그앤드롭 한 것처럼 만드는 과정)
+                        const file = new File([blob], p.fileName, {type: "application/octet-stream"});
+
+                        // 5. 기존에 만들어둔 업로드 함수 재활용
+                        // 이 함수가 알아서 API 2:업로드 -> API 3:슬라이스 -> 뷰어표시를 다 해줌
+                        uploadFile(file);
+                        // 성공시 닫기
+                        closeModal()
+                    })
+                    .catch(err => {
+                        console.error("파일 로딩 실패:", err);
+                        alert("서버에서 파일을 가져오는데 실패했습니다.\n" +
+                            "1. 파일명이 정확한지 확인해주세요.\n" +
+                            "2. WebConfig 설정이 되어있는지 확인해주세요.\n" +
+                            "에러내용: " + err.message);
+                    });
             });
-
             // 만든 li를 ul 안에 집어넣기
             listContainer.appendChild(li);
         });

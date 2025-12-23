@@ -64,7 +64,7 @@ public class ControllerLogin {
                 return "redirect:/maindoctorpage";
             }
         } else {
-            d.addAttribute("msg", "아이디 혹은 비밀번호가 틀렸습니다 다시 로그인 해주세요.");
+            d.addAttribute("msg", "아이디 혹은1 비밀번호가 틀렸습니다 다시 로그인 해주세요.");
             return "z01_Project/Minsu_page/login";
         }
         return "z01_Project/Minsu_page/login";
