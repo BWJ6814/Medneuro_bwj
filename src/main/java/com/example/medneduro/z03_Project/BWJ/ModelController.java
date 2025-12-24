@@ -284,7 +284,7 @@ public class ModelController {
         // throws IOException : 에러가 발생할 수 있다고 경고하는 것 입니다.
         // 파일처리는 예외가 많이 발생하기에 처리하다가 에러가 나면 호출한 곳으로 throw한다는 뜻입니다. (스프링 부트가 알아서 처리)
     String filePath = body.get("filePath");
-    Path source = Paths.get(filePath);
+    Path source = Paths.get(filePath); // String -> Path로 변환
         // Path : 주소를 나타내는 객체
         // Paths.get(문자열) : 글자로 된 주소를 자바가 이해하는 네비게이션 주소로 바꿔주는 기능입니다.
         // 단순 글자(String)일 때는 기능이 없음, Path 전환하면 복사, 이동, 삭제 명령어 가능..
@@ -293,11 +293,12 @@ public class ModelController {
     }
     // C:/ 같은 경로가 아니라면 -> 업로더 폴더 경로를 앞에 붙여줌.
 
-    if (!Files.exists(source)){
+    if (!Files.exists(source)){ // 방어 로직
         // Files.exists(...) 주소지에 건물이 진짜 있는지 확인하는 기능입니다. 있으면 true 없으면 false를 반환
         // return Map.of("ok", false, "message","파일이 서버에 없습니다 :" + filePath);
         return Map.of("ok", false, "message","파일이 서버에 없습니다 :" + source.toString());
     }
+    // UUID 고유 식별자 - 유일한 난수 ID 생성
     String fileId = UUID.randomUUID().toString().replace("-","");
     /*
         새 이름표(ID) 만들기
@@ -306,8 +307,14 @@ public class ModelController {
         .toString() : 문자열로 변경
         .replace("-","") : 중간에 있는 하이픈( - ) 이 보기 싫으니 싹 지워버립니다.
         결과 : 550e8400e29b41d4a716446655440000
+
+        난수 고유한 ID를 만드는 이유!
+        1) 중복 방지: 파일 명이 같을 수 있음 - 난수로 이름을 바꾸지 않으면 나중에 올린 파일이 먼저 올린 파일을 지워버림!
+        2) 보안: 파일명에 개인정보가 있을 수 있음 - 서버 경로가 노출되어도 해당 파일이 누구의 것인지 알 수 없음!
+        3) 일관성: 한글/공백/특수문자가 있으면 파이썬(AI) 프로그램은 읽다 오류가 발생할 수 있음.. -
+            난수는 영문/숫자로만 구성이 되어 있기 때문에 시스템간 통신에 매우 안전!
      */
-    String originalName = source.getFileName().toString();
+    String originalName = source.getFileName().toString(); // 여긴 왜 .replace를 사용하지 않는가..? 실제 이름이라서?
     String ext = originalName.toLowerCase().endsWith(".nii.gz") ? ".nii.gz" : ".nii";
     /*
         파일이 .nii 인지 .nii.gz (압축파일)인지 확인해서, 복사본에도 똑같은 꼬리표를 붙여줘야 합니다.
@@ -318,7 +325,9 @@ public class ModelController {
     /*
         폴더가 있으면 그 폴더안에 넣고 없으면 폴더를 새로 생성하는 코드입니다
      */
+    // 복사본이 놓일 "정확한 좌표" 계산
     Path targetPath = Paths.get(uploadDir, fileId + ext);
+    // 작업대 설정 - 물리적 파일 복사
     Files.copy(source, targetPath, StandardCopyOption.REPLACE_EXISTING);
     /*
         복사할 위치 정하고 복사하기
@@ -326,10 +335,25 @@ public class ModelController {
             작업대 폴더(uploadDir)안에 + 아까 만든 ID(fileId) + 꼬리표 (ext)를 합친 주소를 만듭니다.
             예: C:/MedNeuro/uploads/ + abcd1234 + .nii
             결과: C:/MedNeuro/uploads/abcd1234.nii (여기가 복사본이 놓일 자리입니다.)
+            --> 파일이 저장될 큰 방(up...) + 무작위로 지은 새 이름(filedId) + 원본과 똑같은 꼬리표(ext)
         Files.copy(...) 실제 복사 :
         source : 원본 파일
         targetPaht : 복사본 놓을 자리 (작업대 위)
         REPLACE_EXISTING 만약 폴더에 같은 이름의 파일이 있으면 덮어쓰기(Replace)한다는 에러 방지용 코드입니다.
+
+        복사를 하지 않고 복사본을 만드는 이유!
+        => 작업 공간의 분리
+        1) 원본 보존: 의료 데이터는 매우 중요, 원본 파일을 직접 열어서 분석하다가 프로그램이 강제로 종료 및 에러가 나면
+            원본 데이터가 깨질 위험이 있기 때문에 희생양(복사본)을 만들어 분석에 사용!
+        2) 샌드박스 효과: 사용자의 로컬 폴더(C:/User/...)는 서버나 파이썬 엔진이 접근하기에 보안 권한이 복잡할 수 있기에
+            서버가 자유롭게 읽고 쓸 수 있는 전용 작업대(uploadDir)로 파일을 가져오기!
+        3) 파이썬(AI)서버 연동: 보통 자바가 파일을 받으면 파이썬 서버가 그 파일을 읽어서 AI 분석을 수행함
+            이 때, 자바와 파이썬이 공유할 수 있는 "특정 폴더"에 파일이 놓여 있어야 통신이 원활함..
+
+        덮어쓰기가 필요한 이유?
+        => 로직의 연속성을 위해
+        1) 재시도 처리: 사용자가 파일을 로드 -> 실수로 브라우저를 새로고침 -> 똑같은 파일을 다시 보낼 위험이 있음
+            이 때, 덮어쓰기 옵션이 존재 -> "파일이 존재합니다" 에러를 방지 및 불완전한 기존 파일을 지우고 새 파일로 교체!
      */
     return Map.of(
             "ok", true,
