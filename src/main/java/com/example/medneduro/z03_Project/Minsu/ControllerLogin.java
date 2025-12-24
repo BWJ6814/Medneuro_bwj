@@ -160,6 +160,7 @@ public class ControllerLogin {
     public String logout(HttpSession session){
         session.invalidate();
         return "ok";
+        // ok로 보내줘야 Ajax를 사용 가능함
     }
 
 
