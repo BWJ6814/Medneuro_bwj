@@ -48,6 +48,7 @@ public class ModelController {
         return Map.of("ok", true, "message", "Server is running");
     }
 
+    // 변경사항
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Object> uploadNii(@RequestParam("file") MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) {
