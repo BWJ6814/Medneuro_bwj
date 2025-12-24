@@ -123,14 +123,18 @@
         </main>
 
         <aside class="rightbar">
-            <div class="info-card">Patient Info</div>
-            <div class="info-card">Surgical Info</div>
-            <div class="info-card">Diagnostic Info</div>
+            <div class="info-card">환자 MRI 기록
+
+            </div>
+            <div class="info-card">진단 코멘트
+
+            </div>
+
 
             <div class="right-actions">
-                <button id="btnUpload" class="btn big">Upload</button>
-                <button id="btn3D" class="btn big">3D Conversion</button>
-                <button id="btnAnalyze" class="btn big">Analyze</button>
+                <button id="btnUpload" class="btn big">파일 업로드</button>
+                <button id="btn3D" class="btn big">3D 변환</button>
+                <button id="btnAnalyze" class="btn big">분석하기</button>
             </div>
         </aside>
 

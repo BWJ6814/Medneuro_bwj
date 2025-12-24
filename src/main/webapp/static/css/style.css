@@ -567,8 +567,9 @@ body{
   flex-direction:column;
   gap:10px;
 }
+/* 오른쪽 환자 MRI 리스트 및 진단 코멘트 | 12월 24일 수정 (height : 120px => 200px) */
 .info-card{
-  height:120px;
+  height:200px;
   border-radius:12px;
   border:1px solid var(--line);
   background:rgba(0,0,0,0.12);
