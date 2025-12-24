@@ -155,10 +155,11 @@ public class ControllerLogin {
     }
     // 로그아웃 프로세스
     // 세션의 모든 정보(id, userType 등)를 즉시 삭제하고 로그인 페이지로 이동합니다.
-    @GetMapping("logout")
+    @PostMapping("/api/logout")
+    @ResponseBody
     public String logout(HttpSession session){
         session.invalidate();
-        return "redirect:/loginpage";
+        return "ok";
     }
 
 

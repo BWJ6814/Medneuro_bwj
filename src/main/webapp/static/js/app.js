@@ -125,6 +125,27 @@ $(document).ready(function () {
         }, 300); // 애니메이션 시간(0.3s) 만큼 대기 후 배경 숨김
     });
 
+    $("#logOutBtn").on("click", function () {
+        if(!confirm("로그아웃 하시겠습니까?")){ // 아니요를 누르면 트루
+            return;
+        }
+        $.ajax({
+            // 컨트롤러에 설정한 logout Mapping 주소
+            url:`${API_BASE}/logout`,
+            method:"POST",
+            success: function(){
+                alert("로그아웃 되었습니다.");
+                // 로그아웃시 로그인 페이지로 이동
+                location.href="/loginpage";
+        },
+            error: function(xhr, status, error) {
+                console.error("로그아웃 실패 객체:" +xhr);
+                console.error("상태 코드:" +xhr.status);
+                console.error("에러 내용:" +error);
+                alert("로그아웃 처리 중 오류가 발생했습니다.")
+            }
+        })
+    })
   // ✅ 초기 화면
   showUploadView();
 });
