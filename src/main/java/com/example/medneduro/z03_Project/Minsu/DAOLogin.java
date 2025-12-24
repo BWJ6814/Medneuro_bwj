@@ -147,6 +147,70 @@ COUNT(*) 외에도 MAX(), MIN(), SUM(), AVG() 같은 함수를 사용할 때!
 List<MriListM> getMriList(String loginId);
  // 파이썬에서 나이 계산해주면 편함..
  //Python 코드로 실시간 계산하는 방식이 훨씬 유지보수에 와따
+
+
+    /*
+        위 SQL 구문을 사용하면 안되는 이유 :
+        1. 검색조건이 다름..
+            - 위 쿼리 (getMriList)
+                누가 : 의사가 로그인했을 때...
+                조건 : #{loginId} (로그인한 의사의 아이디)
+                목적 : 의사에게 배정된 환자의 리스트를 줘..
+                결과 : 김철수, 이영희, 박지성 등등 ACCOUNT_ID가 17인 의사 김길동의 환자 목록이 뜸..
+            - 아래 쿼리 (getPatientMriHistory)
+                누가 : 뷰어에서 특정 파일을 열었을 때..
+                조건 : #{currentFilePath} (지금 보고 있는 파일 경로)
+                목적 : 지금 이 파일의 주인(환자) 한명 꺼만 가져와 현재 홍길동의 MRI 파일만 DB에 2개 저장되어있음.
+                결과 : 김길동의 환자인 홍길동의 MRI 파일 2개가 리스트에 나옴..
+        2. 사용하는 화면 위치가 다름..
+            - 위 쿼리 (getMriList)
+                - 왼쪽 사이드바 및 모달창에 사용..
+                - 여기에는 의사가 담당하는 김길동의 환자목록이 떠야함..
+            - 아래 쿼리 (getPatientMriHistory)
+                - 오른쪽 사이드바 (환자 MRI 기록)에 사용..
+                - 여기에는 내가 지금 보고 있는 그 환자의 과거/현재 기록만 떠야 합니다.
+        3. 기술적인 이유
+            load-local 기능을 실행할 때, 프론트엔드(자바스크립트)는 서버에게 "파일 경로 딱 하나만 던져줌..
+            Paint_ID를 알려주지 않음..
+                단서: 파일 경로 하나만 가지고,
+                추리(서브쿼리): SELECT PATIENT_ID ... WHERE IMAGE_FOLDER_PATH = ... 로 주인을 찾아낸 뒤,
+                결과: 그 주인의 모든 파일을 조회합니다.
+            위 쿼리를 쓰는 방법도 있긴한데 의사 아이디를 같이 넘겨줘야하고,
+            전체 리스트 (테스트용 데이터는 적지만, 실제 데이터상으로는 수 백명일 수도 있음)를 다 가져오고
+            자바 코드에서 지금 이 파일이랑 같은 환자가 누구지 하고 반복문을 돌려서 걸러냅니다.
+
+     */
+
+    @Select("""
+    SELECT 
+        -- 1. MRI 파일 정보
+        m.IMAGE_FOLDER_PATH                        AS fileName, 
+        TO_CHAR(m.UPLOAD_DT, 'YYYY-MM-DD HH24:MI') AS uploadDt,
+        
+        -- 2. [추가된 부분] 환자 상세 정보
+        p.PATIENT_NAME                             AS patientName,
+        p.GENDER                                   AS gender,
+        p.BIRTH_DATE                               AS birthDate
+
+    FROM MEDICAL_MRI_FOLDER m
     
+    -- [핵심] 환자 정보를 가져오기 위해 테이블 연결 (JOIN)
+    INNER JOIN PATIENT p ON m.PATIENT_ID = p.PATIENT_ID
+
+    WHERE m.PATIENT_ID = (
+        -- 서브쿼리: 파일 경로로 환자 찾기 (기존 유지)
+        SELECT sub.PATIENT_ID 
+        FROM MEDICAL_MRI_FOLDER sub 
+        WHERE sub.IMAGE_FOLDER_PATH = #{currentFilePath}
+    )
+    ORDER BY m.UPLOAD_DT DESC
+""")
+    List<Map<String, String>> getPatientMriHistory(String currentFilePath);
+    /*
+        List<Map<String, String>> 이런 형태로 가져온 이유는
+        List = 환자의 기록이 여러 개를 확인해야 해서..
+        Map<String, String>기록 하나당 파일명과 날짜 두 가지 정보를 같이 담아야 함.
+     */
+
 }
 

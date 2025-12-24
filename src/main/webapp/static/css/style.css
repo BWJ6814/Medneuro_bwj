@@ -71,7 +71,9 @@ body{
   border-radius:10px;
   background:#1f2127;
 }
-
+.tabs::-webkit-scrollbar{
+    display:none;
+}
 .tab{
   display:flex;
   align-items:center;
@@ -81,12 +83,22 @@ body{
   cursor:pointer;
   user-select:none;
   white-space:nowrap;
+    max-width: 180px; /* 탭칸 최대 넓이.. 12월 24일 */
 }
 .tab:last-child{ border-right:none; }
 
 .tab-name{
   font-size:13px;
   color:rgba(231,233,238,0.65);
+
+   /* 탭 글씨 추가 하면 (...) 변경.. 12월 24일*/
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block; /* span 태그 등에서도 잘 적용되게 함 */
+    flex: 1;        /* 닫기 버튼을 밀어내지 않고 꽉 차게 */
+
+
 }
 .tab.active{ background:rgba(255,255,255,0.06); }
 .tab.active .tab-name{
@@ -570,6 +582,10 @@ body{
   display:flex;
   flex-direction:column;
   gap:10px;
+
+}
+.info-card div::-webkit-scrollbar{
+    display:none;
 }
 /* 오른쪽 환자 MRI 리스트 및 진단 코멘트 | 12월 24일 수정 (height : 120px => 200px) */
 .info-card{

@@ -4,7 +4,7 @@
 - NIfTI 파일(.nii)을 읽어서 지정된 축(Axis) 방향으로 2D PNG 이미지들을 저장합니다.
 - 4D 데이터일 경우 '3번 채널'을 우선적으로 사용합니다.
 """
-
+# 12월 23일 마지막
 import argparse
 import os
 import json

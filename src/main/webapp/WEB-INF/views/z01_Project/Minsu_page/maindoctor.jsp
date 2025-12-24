@@ -125,11 +125,26 @@
         </main>
 
         <aside class="rightbar">
-            <div class="info-card">환자 MRI 기록
-
+            <div class="info-card" style="display:flex; flex-direction:column;">
+                <div style="font-weight:bold; border-bottom:1px solid #444; padding-bottom:8px; margin-bottom:8px;">
+                환자 MRI 기록
             </div>
-            <div class="info-card">진단 코멘트
 
+            <div id="historyList" style="flex:1; overflow-y:auto;">
+                <p style="color:#777; font-size:0.8rem; text-align:center;">
+                    파일을 로드해주세요.
+                </p>
+            </div>
+        </div>
+
+            <div class="info-card" style="display:flex; flex-direction:column;">
+                <div style="font-weight:bold; border-bottom:1px solid #444; padding-bottom:8px; margin-bottom:8px;">
+                    진단 코멘트
+
+                </div>
+                <textarea id="diagnosisInput"
+                          style="flex:1; background:transparent; border:none; color:#eee; resize:none;"
+                          placeholder="진단 내용을 입력하세요"></textarea>
             </div>
 
 

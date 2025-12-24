@@ -902,3 +902,149 @@ function loadServerFile(filePath) {
         }
     });
 }
+
+
+// 최근 분석리스트 오른쪽 사이드바 내용 출력.. 12월 24일 추가..
+
+/**
+ * ✅ 서버 파일 로드 요청
+ */
+function loadServerFile(filePath) {
+    /*
+        [함수명] loadServerFile
+        [기 능] 서버에 저장된 특정 MRI 파일 (.nii)을 로드하고, 뷰어 및 환자 기록 리스트를 갱신
+        [파라미터] filePath : 로드할 파일의 서버 측 경로 문자열
+     */
+    console.log("서버 파일 로딩 시작:", filePath);
+        // 1. 디버깅용 로그 : 어떤 파일이 요청 되었는지 브라우저 콘솔에 기록합니다.
+    $.ajax({
+        // 2. jQuery AJAX 비동기 통신 시작.
+        url: `${API_BASE}/load-local`,
+        // 요청을 보낼 서버의 URL ( Controller의 @PostMapping("/load-local"))"
+        method: "POST",
+        // HTTP 메서드 방식 (데이터를 보내서 처리를 요청하므로 POST 사용)
+        contentType: "application/json",
+        // 서버로 보낼 데이터의 타입 지정 (JSON 형식임을 명시)
+        // 이 설정이 있어야 자바 Controller의 @RequestBody가 데이터를 제대로 읽습니다.
+        data: JSON.stringify({ filePath: filePath }),
+        // 실제 보낼 데이터 (자바 스크립트 객체를 JSON 문자열로 변환하여 전송)
+        success: function (res) {
+            // 통신 성공 시 실행될 콜백 함수 (res : 서버에서 응답한 Map 데이터)
+            if (!res.ok) {
+                alert("로드 실패: " + res.message); // 서버가 보낸 에러 메세지 출력..
+                return; // 함수 강제 종료
+            }
+
+            // 1. 뷰어 실행
+            // 데이터 추출 서버 응답에서 필요한 데이터 꺼내기
+            const fileId = res.fileId; // 서버가 생성한 세션용 임시 ID
+            const fileName = res.originalName; // 원본 파일명
+
+            createSession(fileId, fileName);
+            // 뷰어 초기화 - 로컬 세션 생성 (브라우저 메모리에 파일 정보 저장)
+            setActiveSession(fileId);
+            // 뷰어 초기화 - 현재 보고 있는 파일을 활성 상태로 설정
+            openTools();
+            // UI 변경 - 왼쪽 도구 패널 (Axis 선택 등)을 엽니다.
+            show2DView();
+            // UI 변경 - 업로드 화면을 숨기고 2D 뷰어 화면을 표시합니다.
+
+            // 2. [★핵심] MRI 기록 리스트 업데이트
+            // 서버에서 받은 리스트(res.historyList)를 넘겨줍니다. (해당 환자의 과거 기록)를 화면에 그리는 함수 호출
+            updateHistoryList(res.historyList, fileName);
+
+            // 3. UI 정리
+            $("#layoutRoot").removeClass("upload-mode");
+            // UI 정리 - 전체 레이아웃에서 업로드 모드 스타일 제거
+            $("#recentDrawer").removeClass("open");
+            // UI 정리 - 최근 분석 기록 사이드바 닫기
+            $("#recentDrawerOverlay").removeClass("show");
+            // UI 정리 - 사이드바 뒤의 어두운 배경(오버레이) 숨기기
+
+            // 4. 진단 코멘트창 초기화
+            $("#diagnosisInput").val("");
+            // 입력창 초기화 - 이전에 작성했던 진단 코멘트가 있다면 비워줌 (새 파일이므로)
+
+            console.log(`로딩 성공! ID: ${fileId}`);
+            // 완료 로그 출력
+
+        },
+        // 4. 통신 실패 시 실행될 콜백 함수 (네트워크 오류, 서버 다운 등)
+        error: function (xhr) {
+
+            console.error(xhr);
+            // 에러 내용을 콘솔에 자세히 출력
+            alert("서버 통신 에러: " + (xhr.responseText || xhr.statusText));
+            // 사용자에게 알림창 띄위기 (statusText가 없으면 responseText 사용)
+        }
+    });
+}
+
+/**
+ * ✅ 환자 MRI 기록 리스트 그리기 (info-card 안쪽 채우기)
+ */
+/*
+    [함수명] updateHistoryList
+    [기 능] 오른쪽 사이드바의 '환자 MRI 기록' 영역에 리스트를 동적으로 생성합니다.
+    [파라미터]
+        - historyList : 서버에서 받은 환자의 MRI 파일 목록 (List<Map>)
+        - currentFileName : 현재 뷰어에 띄워진 파일명 (하이라이트 처리용)
+ */
+
+function updateHistoryList(historyList, currentFileName) {
+
+    const $container = $("#historyList"); // HTML에서 만든 그 공간
+    // 1. DOM 요소 선택 : 리스트를 집어넣을 HTML 컨테이너 (div)를 가져옴
+
+    $container.empty(); // 기존 내용(안내문구 등) 지우기
+    // 2. 초기화 : 기존에 표시되어 있던 리스트나 안내 문구를 싹 지웁니다.
+
+    // 기록이 없을 때
+    // 3. 예외 처리 : 만약 리스트가 없거나 비어있다면? (무결성 검사)
+    if (!historyList || historyList.length === 0) {
+        // "기록 없음" 메시지를 HTML로 삼입하고 함수 종료
+        $container.html('<div style="font-size:0.8rem; color:#888; text-align:center; margin-top:20px;">기록 없음</div>');
+        return;
+    }
+
+    // 리스트 하나씩 HTML 만들기
+    // 4. 리스트 순회 : 받아온 목록(Array)을 하나씩 돌면서 HTML을 만듭니다.
+    historyList.forEach(item => {
+        /*
+            화살표 함수
+            기존 => historyList.forEach(function(item) {})
+            화살표 함수 => historyList.forEach(item => {})
+            (item) => {...}  item 이라는 변수에 리스트에 들어있던 한 객체 전체를 담고 => {...} 내부 코드를 실행합니다.
+            요약 : historyList에 있는 데이터를 하나씩 꺼낼 때 마다 item이라는 변수명으로 부르고 item을 가지고 => 중괄호 {} 안의 작업 수행해 라는 뜻..
+         */
+
+        // DB 컬럼명 대소문자 방어 (fileName 혹은 FILENAME)
+        // 데이터 정규화 - DB/MyBatis 설정에 따라 키값이 대/소문자로 다를 수 있으므로 방어 코드 작성
+        // item.fileName이 있으면 쓰고, 없으면 item.FILENAME을 쓴다
+        const name = item.fileName || item.FILENAME || item.IMAGE_FOLDER_PATH;
+        const date = item.uploadDt || item.UPLOADDT || item.UPLOAD_DT;
+        // [★추가] SQL에서 새로 가져온 환자 이름과 성별 꺼내기
+        // 값이 없을 수도 있으니(null) 'Unknown' 같은 기본값 처리
+        const pName = item.patientName || item.PATIENTNAME || "이름미상";
+        const gender = item.gender || item.GENDER || "";
+
+        // 조건부 스타일링 - 현재 보고 있는 파일인지 확인
+        // 만약 리스트의 파일명(name)이 현재 파일명(currentFileName)과 같다면?
+        // -> '노란색 굵은 글씨' 스타일 적용, 아니면 '회색' 전용
+        const isActive = (name === currentFileName);
+        const activeClass = isActive ? "active-item" : ""; // CSS 클래스로 제어 추천
+        const activeStyle = isActive ? "color:#FFD700; font-weight:bold;" : "color:#ccc;";
+
+        // HTML 조립 (심플하게) 템플릿 리터럴(백틱) 을 사용하여 동적 HTML 생성
+        // onclick 이벤트 : 클릭 시 다시 loadServerFile을 호출하여 해당 파일로 화면 전환 (재귀적 구조)
+        const html = `
+            <div class="mini-hist-item" onclick="loadServerFile('${name}')" style="cursor:pointer; padding:6px 0; border-bottom:1px solid #333;">
+                <div style="font-size:0.85rem; ${activeStyle}">${name}</div>
+                <div style="font-size:0.75rem; color:#666;">${date}</div>
+            </div>
+        `;
+
+        // 5. DOM 삽입 : 조립된 HTML 조각을 컨테이너 끝에 추가합니다.
+        $container.append(html);
+    });
+}

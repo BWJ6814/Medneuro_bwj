@@ -1,5 +1,7 @@
 package com.example.medneduro.z03_Project.BWJ;
 
+import com.example.medneduro.z03_Project.Minsu.ServiceLogin;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
@@ -19,6 +21,10 @@ import java.util.*;
 public class ModelController {
 
     private final PythonRunnerService pythonRunnerService;
+    @Autowired
+
+    private ServiceLogin serviceLogin;
+
 
     public ModelController(PythonRunnerService pythonRunnerService) {
         this.pythonRunnerService = pythonRunnerService;
@@ -355,10 +361,13 @@ public class ModelController {
         1) 재시도 처리: 사용자가 파일을 로드 -> 실수로 브라우저를 새로고침 -> 똑같은 파일을 다시 보낼 위험이 있음
             이 때, 덮어쓰기 옵션이 존재 -> "파일이 존재합니다" 에러를 방지 및 불완전한 기존 파일을 지우고 새 파일로 교체!
      */
+    List<Map<String, String>> historyList = serviceLogin.getHistoryList(filePath);
+
     return Map.of(
             "ok", true,
             "fileId",fileId,
-            "originalName",originalName
+            "originalName",originalName,
+            "historyList",historyList
             );
     }
 }

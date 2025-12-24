@@ -147,4 +147,10 @@ public class ServiceLogin {
         return dao.getMriList(loginId);
     }
 
+    //  환자의 과거 MRI 히스토리 조회
+    public List<Map<String, String>> getHistoryList(String filePath) {
+        // DAO에 있는 메서드를 호출해서 결과를 리턴합니다.
+        return dao.getPatientMriHistory(filePath);
+    }
+
 }
