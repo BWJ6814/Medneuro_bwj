@@ -1,0 +1,67 @@
+package com.example.medneduro.z03_Project.Minsu;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+// 클래스를 스프링 컨테이너에 Bean 개개체로 등록..
+// 나중에 설정 클래스 InterceptorConfig에서 @Autowired로 가져오기 위해서
+@Component
+public class LoginInterceptor implements HandlerInterceptor{
+    /*
+    스프링이 제공하는 인터셉터 인터페이스(규격) 구현하기
+    스프링 MVC의 정해진 흐름(컨트롤러 호출 전/후 등)에 직접 만든 로직을 끼워넣기 위함..
+
+  preHandle
+  - 시점: 사용장 요청이 컨트롤러에 도착하기 직전에 실행
+
+  HttpServletRequest request
+  - 출처: 톰캣(WAS)이 생성해서 넘겨줌
+  - 기능: 사용자가 보낸 요청 정보(세션, 파라미터, 쿠기 등) 모두 담고 있는 바구니!
+
+  HttpServletResponse response
+  - 출처: 톰캣(WAS)이 생성해서 넘겨줌
+  - 기능: 서버가 사용자에게 보낼 응답 정보(리다이렉트, 결과 데이터 등)를 제어하는 도구!
+
+  Object handler
+  - 기능: 현재 요청을 처리할 대상(컨트롤러의 어떤 메서드인지)에 대한 정보를 담고 있음
+  */
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception{
+        HttpSession session = request.getSession();
+        /*
+        request.getSession()
+        - 출처: request 객체 내부에서 꺼내옴
+        - 기능: 현재 브라우저와 연결된 서버 측 저장소(세션)르 가져옴
+        */
+        String LoginId = (String) session.getAttribute("id");
+        /*
+        session.getAttribute("id")
+        - 출처: 서버 메모리(세션 저장소)에서 가져옴
+        - 기능: 로그인 성공 시 컨트롤러에서 session.setAttribute("id", id)로 저장했던 값을 꺼냄
+        - 참고: 저장될 때 Object 타입으로 저장되므로 (String)으로 형변환이 필요..
+        */
+        // 조건문 및 강제 이동
+        // 값이 비어있다면? 로그인 x
+        if(LoginId == null){
+            /* 
+            ContextPath를 붙여서 정확한 경로로 이동
+            
+            equest.getContextPath
+            - 기능: 프로젝트의 기본 경로(루트 경로)를 가져옴
+            - 이유: 하드코딩하지 않고 유연하게 경로를 맞추기 위해서 (/myproject)
+            
+            response.sendRedirect
+            - 기능: 사용자의 브라우저에게 이 주소로 다시 강제로 이동해! 라고 명령을 내립니다.
+                    여기서는 로그인 페이지로 강제 이동시킴
+            */
+            response.sendRedirect(request.getContextPath()+"/loginpage");
+            // 검문 통과 실패 및 컨트롤러 실행이 즉시 중단
+            return false;
+        }
+        return true;
+    }
+}

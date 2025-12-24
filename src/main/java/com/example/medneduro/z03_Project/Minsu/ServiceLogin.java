@@ -23,7 +23,7 @@ public class ServiceLogin {
     private PasswordEncoder passwordEncoder;
 
     // 로그인
-    public boolean logincheck(String userType, String id, String pwd) {
+    public String logincheck(String userType, String id, String pwd) {
         // 1. DB 타입 변환
         // dbType란?
         // 데이터 다이어트로 화면에서 사용자 타입을 general 또는 doctor라는 긴 단어로 받지만. 이를 약어로 설정하는 것!
@@ -44,7 +44,7 @@ public class ServiceLogin {
 
         // 4. [방어 로직] 아이디가 틀려서 DB에 결과가 없으면 encodedPassword는 null임!
         if (encodedPassword == null) {
-            return false; // 아이디가 없으니 바로 실패 처리
+            return "NO_ID"; // 아이디가 없으니 바로 실패 처리
         }
 
         /*
@@ -64,7 +64,11 @@ public class ServiceLogin {
         // 아래 내용이 전용 비교 메서드 passwordEncoder.matches(입력비번, DB암호문)
         // 버전(3)-갈은 횟수(3)-솔트(22자)-해시결과값(31):체크섬
 
-        return passwordEncoder.matches(pwd, encodedPassword);
+        if( passwordEncoder.matches(pwd, encodedPassword) ){
+            return "SUCCESS";
+        } else {
+            return "WRONG_PWD";
+        }
         // 새로 생성된 결과값이 db 암호문의 체크섬 부분과 일치하는지 확인
         // true - 비밀번호 일치
         // false - 비밀번호 x / db암호문을 임의로 수정해서 형식이 깨짐..

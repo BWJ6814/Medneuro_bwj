@@ -828,35 +828,45 @@ function loadServerFile(filePath) {
     console.log("서버 파일 로딩 요청 시작:", filePath);
 
     // 1. 자바(백엔드)에게 요청 (AJAX)
+    // AJAX란 자바(백)와 자바스크립트(프론트)가 비동기적으로 통신하는 기술
+    // 즉, F5를 하지 않고 페이지의 일부부만 서버에서 데이터를 가져와서 업데이틑 하는 기술
+    // 비동기성은 서버에 요청을 보냄 -> 요청이 올 때까지 기다리는게 아닌 다른 작업을 계속 할 수 있음 !!
+    // Ajax 자체는 브라우저(스크립트)의 기술이지만, 자바 서버와 데이터를 주고 받을 때 가장 빛이 남 !_!
     $.ajax({
-        url: `${API_BASE}/load-local`, // Controller의 /load-local 주소
+        url: `${API_BASE}/load-local`, // Controller의 /load-local 주소 = 컨트롤러에 만든 전용 통로로 신호주기
         method: "POST",
-        contentType: "application/json",
+        contentType: "application/json", // 데이터가 JSON 형식임을 미리 알려줌. 서버의 @RequestBody와 짝꿍
         data: JSON.stringify({ filePath: filePath }), // { "filePath": "..." }
+        // 사용자가 선택한 파일이 서버 컴퓨터의 어떤 위치(C:/data/mri_01.dcm 등)에 있는지 경로 정보를 포장해서 보내기
 
         // 2. 성공 시
         success: function (res) {
-            if (!res.ok) {
+            if (!res.ok) { // ok가 아니라면,,
                 alert("파일 로드 실패: " + res.message);
                 return;
             }
 
             // 서버가 발급해준 ID와 파일명
+            // 서버가 파일을 성공적으로 읽을 경우 해당 파일을 식별할 수 있는 고유 번호(ID)와 원래 이름을 응답으로 보내기
+
             const fileId = res.fileId;
             const fileName = res.originalName;
 
             console.log(`로딩 성공! ID: ${fileId}`);
 
             // 3. 뷰어 실행 (기존 로직 재사용)
+            // 뷰어 엔진에 해당 ID를 가진 파일을 이제부터 보여줄 것이다! 라고 세션을 생성 및 저장
             createSession(fileId, fileName);
-            setActiveSession(fileId);
+            setActiveSession(fileId); // 여러 파일 중 해당 파일만 메인으로 보겠다고 설정 -> 뷰어 활성화 및 상태 제어
 
+            // 업로드 화면을 닫고 실제 MRI 영상을 볼 수 있는 2D 분석 도구를 화면에 표시.
             openTools();
             show2DView();
 
             // UI 정리
             $("#layoutRoot").removeClass("upload-mode");
             $("#analysis2DView").removeClass("thumbs-collapsed").addClass("thumbs-open");
+            // 클레스를 제어해서 화면의 레이아웃을 업로드 모드 -> 분석 모드로 전환
             $("#btnThumbToggle").text("▲");
             $("#viewerTitle").text("축(Axis)을 선택해주세요");
 
