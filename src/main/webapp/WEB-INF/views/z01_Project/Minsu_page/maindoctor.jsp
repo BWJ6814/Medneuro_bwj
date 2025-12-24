@@ -56,6 +56,7 @@
             <button id="2dBtn"><span class="material-symbols-outlined">replace_image</span>2D</button>
             <button id="3dBtn"><span class="material-symbols-outlined">deployed_code</span>3D</button>
             <button id="commentBtn"><span class="material-symbols-outlined">edit_square</span></button>
+            <button id="logBtn" ><span class="material-symbols-outlined">Logout</span></button>
         </aside>
 
         <aside id="toolPanel" class="tool-panel hidden">
@@ -112,7 +113,7 @@
                 <div class="viewer-header">
                     <div class="viewer-title">3D View</div>
                     <div class="viewer-actions">
-                        <button id="btnBackTo2D" class="btn">2D Conversion</button>
+                        <button id="btnBackTo2D" class="btn">2D 변환</button>
                     </div>
                 </div>
 

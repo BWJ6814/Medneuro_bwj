@@ -297,6 +297,10 @@ body{
             "GRAD" 0,
             "opsz" 35;
 }
+#logBtn {
+    margin-top: auto;    /* 위쪽 여백을 자동으로 최대치로 설정 -> 아래로 밀림 */
+    margin-bottom: 10px; /* 바닥이랑 너무 딱 붙지 않게 약간 띄워줌 (선택사항) */
+}
 
 /* ✅ 튀어나오는 툴 패널 */
 .tool-panel{
