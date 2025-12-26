@@ -814,9 +814,13 @@ document.addEventListener('DOMContentLoaded', function() {
         fileListEl.innerHTML = ''; // 기존 파일 목록 초기화
 
         // 2. 환자가 가진 파일 개수만큼 반복
-        patient.files.forEach(p => {
+        patient.files.forEach((p, index) => {
             const li = document.createElement('li');
             li.className = 'file-item';
+
+            // [★수정] 공통 함수(getPrettyName)를 호출해서 예쁜 이름 만들기
+            // (원본파일명, 환자이름, 현재순서, 전체개수)
+            const displayName = getPrettyName(p.fileName, patient.name, index, patient.files.length);
 
             // 3. 의사가 확인했는지(lastCheck) 여부에 따라 마크 표시
             // 삼항 연산자: (조건) ? 참일때 : 거짓일때
@@ -826,7 +830,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             li.innerHTML = `
                 <div style="display:flex; flex-direction:column;">
-                    <span style="color:#fff; font-size:1rem; margin-bottom:2px;">${p.fileName}</span>
+                    <span style="color:#fff; font-size:1rem; margin-bottom:2px;" title="${p.fileName}">
+                        ${displayName}
+                    </span>
                     <span style="color:#777; font-size:0.8rem;">업로드: ${p.uploadDt || '날짜없음'}</span>
                 </div>
                 ${checkHtml}
@@ -834,7 +840,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // ★ 클릭 이벤트: 파일을 누르면 로딩 시작!
             li.addEventListener('click', function() {
-                loadFileAndUpload(p); // 아래에 정의된 함수 호출
+                loadFileAndUpload(p, displayName); // 아래에 정의된 함수 호출
             });
 
             fileListEl.appendChild(li);
@@ -843,7 +849,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // 5. 실제 파일 로딩 로직 (기존 코드 분리하여 정리)
-    function loadFileAndUpload(p) {
+    function loadFileAndUpload(p, prettyName) {
+
+        const targetName = prettyName || p.fileName;
+
         // 1. 메인 화면의 제목을 파일명으로 변경 (UI 업데이트)
         // 예: /mri-file/brain_scan_01.nii.gz
         if (mainFileNameDisplay) {
@@ -866,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 4. 가짜 파일 생성
                 // 뷰어는 사용자가 드래그&드롭한 'File 객체'를 원하므로,
                 // 서버에서 받은 데이터를 이용해서 가짜 File 객체를 만들어 줌..
-                const file = new File([blob], p.fileName, {type: "application/octet-stream"});
+                const file = new File([blob], targetName, {type: "application/octet-stream"});
                 // 기존 뷰어 업로드 함수 실행
                 uploadFile(file);
                 // 성공 시 모달 닫기
