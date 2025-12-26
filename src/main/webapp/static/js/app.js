@@ -544,7 +544,7 @@ function toggleTools() {
   const $layout = $("#layoutRoot");
   const collapsed = $layout.hasClass("tools-collapsed");
 
-  if (collapsed) openTools();
+  if (collapsed) openTools()
   else collapseTools();
 }
 
@@ -1015,7 +1015,8 @@ function updateHistoryList(historyList, currentFileName) {
             기존 => historyList.forEach(function(item) {})
             화살표 함수 => historyList.forEach(item => {})
             (item) => {...}  item 이라는 변수에 리스트에 들어있던 한 객체 전체를 담고 => {...} 내부 코드를 실행합니다.
-            요약 : historyList에 있는 데이터를 하나씩 꺼낼 때 마다 item이라는 변수명으로 부르고 item을 가지고 => 중괄호 {} 안의 작업 수행해 라는 뜻..
+            요약 : historyList에 있는 데이터를 하나씩 꺼낼 때 마다 item이라는 변수명으로
+                    부르고 item을 가지고 => 중괄호 {} 안의 작업 수행해 라는 뜻..
          */
 
         // DB 컬럼명 대소문자 방어 (fileName 혹은 FILENAME)
