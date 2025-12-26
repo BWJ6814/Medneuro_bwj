@@ -39,11 +39,14 @@ public class ControllerLogin {
             return "z01_Project/Minsu_page/login";
         }
         // 서비스단에서 비밀번호 대조 후 그 값을 컨트롤 단으로 다시 불러서 확인!
-        // matches()의 결과값 true/false를 여기서 받음
-        if (service.logincheck(userType, id, pwd)) {
+        // matches()의 결과값 SUCCESS/WRONG_PWD를 여기서 받음
+        String result = service.logincheck(userType, id, pwd);
+        if ("SUCCESS".equals(result)) {
             // [인증 성공] 세션에 증표 젖아(비밀번호는 저장 x!!!!)
             session.setAttribute("userType", userType);
             session.setAttribute("id", id);
+
+                return "general".equals(userType) ? "redirect:/viewer/index.html" : "redirect:/maindoctorpage";
             /*
             ### 세션을 사용하는 이유! ###
             1. 저장의 타이밍!
@@ -62,15 +65,13 @@ public class ControllerLogin {
             사용자 식별[ID + 사용자 유형(userType)] 값만 세션에 저장. 비밀번호는 로그인이 완료된 시점부터는 더 이상 필요하지 않으며,
             만약 세션 하이재킹(Session Hijacking) 공격을 당할 경우 비밀번호가 노출될 위험 -> 보안을 위해 세션에 저장 X!
              */
-            if (userType.equals("general")) {
-                return "redirect:/viewer/index.html";
+
+        }  else {
+            if("NO_ID".equals(result)){
+                d.addAttribute("msg","존재하지 않는 아이디입니다.");
+            } else {
+                d.addAttribute("msg","비밀번호가 일치하지 않습니다.");
             }
-            if (userType.equals("doctor")) {
-                return "redirect:/maindoctorpage";
-            }
-        } else {
-            d.addAttribute("msg", "아이디 혹은 비밀번호가 틀렸습니다 다시 로그인 해주세요.");
-            return "z01_Project/Minsu_page/login";
         }
         return "z01_Project/Minsu_page/login";
     }
@@ -143,7 +144,7 @@ public class ControllerLogin {
     }
 
     @GetMapping("checkId")
-    @ResponseBody
+    @ResponseBody // Ajax를 사용할 친구
     public String checkId(@RequestParam(name="id",defaultValue = "") String id){
         int count = service.checkId(id);
         if(count == 0){
@@ -151,6 +152,15 @@ public class ControllerLogin {
         } else {
             return "중복된 아이디입니다.";
         }
+    }
+    // 로그아웃 프로세스
+    // 세션의 모든 정보(id, userType 등)를 즉시 삭제하고 로그인 페이지로 이동합니다.
+    @PostMapping("/api/logout")
+    @ResponseBody
+    public String logout(HttpSession session){
+        session.invalidate();
+        return "ok";
+        // ok로 보내줘야 Ajax를 사용 가능함
     }
 
 

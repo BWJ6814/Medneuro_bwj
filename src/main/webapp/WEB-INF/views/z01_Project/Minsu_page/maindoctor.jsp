@@ -56,7 +56,9 @@
             <button id="2dBtn"><span class="material-symbols-outlined">replace_image</span>2D</button>
             <button id="3dBtn"><span class="material-symbols-outlined">deployed_code</span>3D</button>
             <button id="commentBtn"><span class="material-symbols-outlined">edit_square</span></button>
+            <button id="logOutBtn" ><span class="material-symbols-outlined">Logout</span></button>
         </aside>
+
 
         <aside id="toolPanel" class="tool-panel hidden">
             <div class="tool-panel-head">Axis</div>
@@ -112,7 +114,7 @@
                 <div class="viewer-header">
                     <div class="viewer-title">3D View</div>
                     <div class="viewer-actions">
-                        <button id="btnBackTo2D" class="btn">2D Conversion</button>
+                        <button id="btnBackTo2D" class="btn">2D 변환</button>
                     </div>
                 </div>
 
@@ -123,14 +125,33 @@
         </main>
 
         <aside class="rightbar">
-            <div class="info-card">Patient Info</div>
-            <div class="info-card">Surgical Info</div>
-            <div class="info-card">Diagnostic Info</div>
+            <div class="info-card" style="display:flex; flex-direction:column;">
+                <div style="font-weight:bold; border-bottom:1px solid #444; padding-bottom:8px; margin-bottom:8px;">
+                환자 MRI 기록
+            </div>
+
+            <div id="historyList" style="flex:1; overflow-y:auto;">
+                <p style="color:#777; font-size:0.8rem; text-align:center;">
+                    파일을 로드해주세요.
+                </p>
+            </div>
+        </div>
+
+            <div class="info-card" style="display:flex; flex-direction:column;">
+                <div style="font-weight:bold; border-bottom:1px solid #444; padding-bottom:8px; margin-bottom:8px;">
+                    진단 코멘트
+
+                </div>
+                <textarea id="diagnosisInput"
+                          style="flex:1; background:transparent; border:none; color:#eee; resize:none;"
+                          placeholder="진단 내용을 입력하세요"></textarea>
+            </div>
+
 
             <div class="right-actions">
-                <button id="btnUpload" class="btn big">Upload</button>
-                <button id="btn3D" class="btn big">3D Conversion</button>
-                <button id="btnAnalyze" class="btn big">Analyze</button>
+                <button id="btnUpload" class="btn big">파일 업로드</button>
+                <button id="btn3D" class="btn big">3D 변환</button>
+                <button id="btnAnalyze" class="btn big">분석하기</button>
             </div>
         </aside>
 

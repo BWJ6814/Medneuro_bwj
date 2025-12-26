@@ -20,7 +20,7 @@ slice_000.png 형태로 out 폴더에 저장
 ↓
 마지막에 {"ok":true,"sliceCount":...} JSON을 print
 """
-
+# 12월 23일 마지막
 import argparse
 import os
 import json
