@@ -357,6 +357,14 @@ function setActiveSession(fileId) {
         $("#mainSlice").attr("src", "");
         $("#thumbList").empty();
     }
+    if (s.historyList && s.sourcePath) {
+        // 저장해둔 리스트와 내 경로를 이용해서 다시 그리기 (그럼 노란불이 옮겨감)
+        updateHistoryList(s.historyList, s.sourcePath);
+    } else {
+        // 로컬 업로드 파일이라 리스트가 없으면 비워주기
+        $("#historyList").html('<div style="text-align:center; padding:20px; color:#666;">기록 없음</div>');
+        $("#targetPatientName").text("");
+    }
 }
 
 /**
@@ -843,75 +851,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // ★ 클릭 이벤트: 파일을 누르면 로딩 시작!
             li.addEventListener('click', function() {
-                // 여기서 patient(환자 정보 전체)를 3번째 인자로 넘기는 것이 핵심입니다!
-                loadFileAndUpload(p, displayName, patient);
+                // 1. 선택 효과 (파란색)
+                const allItems = fileListEl.querySelectorAll('.file-item');
+                allItems.forEach(item => {
+                    item.style.backgroundColor = "#2C2C2E";
+                    item.style.border = "1px solid transparent";
+                });
+                li.style.backgroundColor = "#0d6efd";
+                li.style.border = "1px solid #8aa4ff";
+
+                // 2. 서버 파일 로드 요청 (이름만 넘기면 됨)
+                // p.fileName은 DB에 저장된 파일 경로(UUID 포함된 전체 이름)여야 함
+                loadServerFile(p.fileName);
             });
 
             fileListEl.appendChild(li);
         });
     }
 
-
-    // 5. 실제 파일 로딩 로직 (기존 코드 분리하여 정리)
-    function
-    loadFileAndUpload(p, prettyName,patient) {
-
-        const targetName = prettyName || p.fileName;
-
-        // 1. 메인 화면의 제목을 파일명으로 변경 (UI 업데이트)
-        // 예: /mri-file/brain_scan_01.nii.gz
-        if (mainFileNameDisplay) {
-            mainFileNameDisplay.textContent = p.fileName;
-            mainFileNameDisplay.style.color = "#4CAF50";
-            mainFileNameDisplay.style.fontWeight = "bold";
-        }
-
-        // 2. fetch: 자바스크립트가 서버에 몰래 가서 파일을 가져옴 (WebConfig에 설정된 경로)
-        // 요청 주소 만들기 [예: /mri-file/image_123.nii.gz]
-        const resourceUrl = `/mri-file/${p.fileName}`;
-
-        // 3. fetch (서버 통신)
-        fetch(resourceUrl)
-            .then(response => {
-                // 파일 없으면 에러
-                if (!response.ok) throw new Error(`파일 찾기 실패 (URL: ${resourceUrl})`);
-                return response.blob(); // 파일을 'Blob(덩어리)' 형태로 받음
-            })
-            .then(blob => {
-                // 4. 가짜 파일 생성
-                // 뷰어는 사용자가 드래그&드롭한 'File 객체'를 원하므로,
-                // 서버에서 받은 데이터를 이용해서 가짜 File 객체를 만들어 줌..
-                const file = new File([blob], targetName, {type: "application/octet-stream"});
-                // 기존 뷰어 업로드 함수 실행
-                uploadFile(file);
-
-                // ★ [핵심] 여기서 사이드바 업데이트 호출!
-                // updateHistoryList 함수가 있고, patient 정보가 잘 넘어왔다면 실행
-                if(typeof updateHistoryList === 'function' && patient){
-                    // map(f => ...): 여기서 'f'로 받아야 아래에서 f.fileName을 쓸 수 있습니다.
-                    const formattedList = patient.files.map(f => ({
-                        fileName: f.fileName,
-                        uploadDt: f.uploadDt,
-                        patientName: patient.name, // 환자 이름도 넣어주기
-                        gender: patient.gender
-                    }));
-
-                    updateHistoryList(formattedList, p.fileName);
-                }
-                // p 객체에는 patient 정보가 없으므로, 상위 스코프나 인자로 patient를 받아야 완벽하지만,
-                // 일단 현재 파일 정보를 가지고 업데이트 시도
-                // 임시로 리스트 구성 (현재 파일 하나만이라도 보이게 하거나, 로직 확장 필요)
-                // 만약 전체 리스트를 보여주고 싶다면 renderFileList에서 patient 객체를 넘겨받아야 함.
-
-                // 성공 시 모달 닫기
-                closeModal();
-            })
-            // 실패시 경고창..
-            .catch(err => {
-                console.error("로딩 실패:", err);
-                alert("파일 로딩 실패: " + err.message);
-            }); /*아녕하세요~*/
-    }
 
 
     // 6. 검색 기능 (환자 이름으로 검색)
@@ -973,143 +930,83 @@ $(document).on('click', '.recent-item', function() {
 });
 // 이하 모달 종료!
 
-
 /**
- * ✅ 서버에 있는 파일 경로로 로드하기 (핵심 엔진)
- * filePath: "/home/test/brain.nii" 같은 서버 절대 경로
+ * ✅ [통합] 서버 파일 로드 요청 (중복 방지 + 탭 이동 + 기록 갱신)
+ * @param {string} filePath - 서버에 있는 파일의 절대 경로 (DB의 IMAGE_FOLDER_PATH)
  */
 function loadServerFile(filePath) {
-    console.log("서버 파일 로딩 요청 시작:", filePath);
+    console.log("🚀 파일 로딩 요청:", filePath);
 
-    // 1. 자바(백엔드)에게 요청 (AJAX)
-    // AJAX란 자바(백)와 자바스크립트(프론트)가 비동기적으로 통신하는 기술
-    // 즉, F5를 하지 않고 페이지의 일부부만 서버에서 데이터를 가져와서 업데이틑 하는 기술
-    // 비동기성은 서버에 요청을 보냄 -> 요청이 올 때까지 기다리는게 아닌 다른 작업을 계속 할 수 있음 !!
-    // Ajax 자체는 브라우저(스크립트)의 기술이지만, 자바 서버와 데이터를 주고 받을 때 가장 빛이 남 !_!
+    // [1] 중복 방지 로직
+    for (const [sid, session] of sessions.entries()) {
+        if (session.sourcePath === filePath) {
+            console.log(`🔄 이미 열려있는 탭입니다. (ID: ${sid})`);
+            setActiveSession(sid);
+            closeAllDrawersAndModals();
+            return;
+        }
+    }
+
+    // [2] 서버 요청
     $.ajax({
-        url: `${API_BASE}/load-local`, // Controller의 /load-local 주소 = 컨트롤러에 만든 전용 통로로 신호주기
+        url: `${API_BASE}/load-local`,
         method: "POST",
-        contentType: "application/json", // 데이터가 JSON 형식임을 미리 알려줌. 서버의 @RequestBody와 짝꿍
-        data: JSON.stringify({ filePath: filePath }), // { "filePath": "..." }
-        // 사용자가 선택한 파일이 서버 컴퓨터의 어떤 위치(C:/data/mri_01.dcm 등)에 있는지 경로 정보를 포장해서 보내기
-
-        // 2. 성공 시
+        contentType: "application/json",
+        data: JSON.stringify({ filePath: filePath }),
         success: function (res) {
-            if (!res.ok) { // ok가 아니라면,,
-                alert("파일 로드 실패: " + res.message);
+            if (!res.ok) {
+                alert("로드 실패: " + res.message);
                 return;
             }
 
-            // 서버가 발급해준 ID와 파일명
-            // 서버가 파일을 성공적으로 읽을 경우 해당 파일을 식별할 수 있는 고유 번호(ID)와 원래 이름을 응답으로 보내기
-
             const fileId = res.fileId;
-            const fileName = res.originalName;
+            const fileName = res.originalName; // 이건 화면 표시용 이름
 
-            console.log(`로딩 성공! ID: ${fileId}`);
-
-            // 3. 뷰어 실행 (기존 로직 재사용)
-            // 뷰어 엔진에 해당 ID를 가진 파일을 이제부터 보여줄 것이다! 라고 세션을 생성 및 저장
+            // [3] 세션 생성
             createSession(fileId, fileName);
-            setActiveSession(fileId); // 여러 파일 중 해당 파일만 메인으로 보겠다고 설정 -> 뷰어 활성화 및 상태 제어
 
-            // 업로드 화면을 닫고 실제 MRI 영상을 볼 수 있는 2D 분석 도구를 화면에 표시.
+            const s = sessions.get(fileId);
+            if (s) {
+                s.sourcePath = filePath; // ★ 중요: 원본 경로 저장
+                s.historyList = res.historyList; // 환자 리스트 저장
+            }
+
+            // [4] 뷰어 활성화
+            setActiveSession(fileId);
             openTools();
             show2DView();
 
-            // UI 정리
+            // [5] 리스트 업데이트 (★ 여기가 핵심 수정!)
+            // fileName이 아니라 'filePath'를 넘겨야 리스트의 ID와 일치해서 노란불이 들어옵니다.
+            updateHistoryList(res.historyList, filePath);
+
+            // [6] UI 정리
             $("#layoutRoot").removeClass("upload-mode");
             $("#analysis2DView").removeClass("thumbs-collapsed").addClass("thumbs-open");
-            // 클레스를 제어해서 화면의 레이아웃을 업로드 모드 -> 분석 모드로 전환
             $("#btnThumbToggle").text("▲");
             $("#viewerTitle").text("축(Axis)을 선택해주세요");
 
-            alert("파일이 로드되었습니다. 왼쪽에서 축(Axial 등)을 클릭하세요!");
+            closeAllDrawersAndModals();
         },
-
-        // 3. 에러 시
         error: function (xhr) {
             console.error(xhr);
-            alert("서버 연결 에러: " + (xhr.responseText || xhr.statusText));
+            alert("서버 통신 에러: " + (xhr.responseText || xhr.statusText));
         }
     });
 }
 
+// [보조 함수] 모든 팝업창 닫기 (코드 중복 제거용)
+function closeAllDrawersAndModals() {
+    // 최근 분석 드로어 닫기
+    $('#recentDrawer').removeClass('open');
+    $('#recentDrawerOverlay').removeClass('show');
 
-// 최근 분석리스트 오른쪽 사이드바 내용 출력.. 12월 24일 추가..
+    // 모달 창 닫기
+    const modal = document.getElementById('myModal');
+    if (modal) modal.classList.remove('show');
 
-/**
- * ✅ 서버 파일 로드 요청
- */
-function loadServerFile(filePath) {
-    /*
-        [함수명] loadServerFile
-        [기 능] 서버에 저장된 특정 MRI 파일 (.nii)을 로드하고, 뷰어 및 환자 기록 리스트를 갱신
-        [파라미터] filePath : 로드할 파일의 서버 측 경로 문자열
-     */
-    console.log("서버 파일 로딩 시작:", filePath);
-    // 1. 디버깅용 로그 : 어떤 파일이 요청 되었는지 브라우저 콘솔에 기록합니다.
-    $.ajax({
-        // 2. jQuery AJAX 비동기 통신 시작.
-        url: `${API_BASE}/load-local`,
-        // 요청을 보낼 서버의 URL ( Controller의 @PostMapping("/load-local"))"
-        method: "POST",
-        // HTTP 메서드 방식 (데이터를 보내서 처리를 요청하므로 POST 사용)
-        contentType: "application/json",
-        // 서버로 보낼 데이터의 타입 지정 (JSON 형식임을 명시)
-        // 이 설정이 있어야 자바 Controller의 @RequestBody가 데이터를 제대로 읽습니다.
-        data: JSON.stringify({ filePath: filePath }),
-        // 실제 보낼 데이터 (자바 스크립트 객체를 JSON 문자열로 변환하여 전송)
-        success: function (res) {
-            // 통신 성공 시 실행될 콜백 함수 (res : 서버에서 응답한 Map 데이터)
-            if (!res.ok) {
-                alert("로드 실패: " + res.message); // 서버가 보낸 에러 메세지 출력..
-                return; // 함수 강제 종료
-            }
-
-            // 1. 뷰어 실행
-            // 데이터 추출 서버 응답에서 필요한 데이터 꺼내기
-            const fileId = res.fileId; // 서버가 생성한 세션용 임시 ID
-            const fileName = res.originalName; // 원본 파일명
-
-            createSession(fileId, fileName);
-            // 뷰어 초기화 - 로컬 세션 생성 (브라우저 메모리에 파일 정보 저장)
-            setActiveSession(fileId);
-            // 뷰어 초기화 - 현재 보고 있는 파일을 활성 상태로 설정
-            openTools();
-            // UI 변경 - 왼쪽 도구 패널 (Axis 선택 등)을 엽니다.
-            show2DView();
-            // UI 변경 - 업로드 화면을 숨기고 2D 뷰어 화면을 표시합니다.
-
-            // 2. [★핵심] MRI 기록 리스트 업데이트
-            // 서버에서 받은 리스트(res.historyList)를 넘겨줍니다. (해당 환자의 과거 기록)를 화면에 그리는 함수 호출
-            updateHistoryList(res.historyList, fileName);
-
-            // 3. UI 정리
-            $("#layoutRoot").removeClass("upload-mode");
-            // UI 정리 - 전체 레이아웃에서 업로드 모드 스타일 제거
-            $("#recentDrawer").removeClass("open");
-            // UI 정리 - 최근 분석 기록 사이드바 닫기
-            $("#recentDrawerOverlay").removeClass("show");
-            // UI 정리 - 사이드바 뒤의 어두운 배경(오버레이) 숨기기
-
-            // 4. 진단 코멘트창 초기화
-            $("#diagnosisInput").val("");
-            // 입력창 초기화 - 이전에 작성했던 진단 코멘트가 있다면 비워줌 (새 파일이므로)
-
-            console.log(`로딩 성공! ID: ${fileId}`);
-            // 완료 로그 출력
-
-        },
-        // 4. 통신 실패 시 실행될 콜백 함수 (네트워크 오류, 서버 다운 등)
-        error: function (xhr) {
-
-            console.error(xhr);
-            // 에러 내용을 콘솔에 자세히 출력
-            alert("서버 통신 에러: " + (xhr.responseText || xhr.statusText));
-            // 사용자에게 알림창 띄위기 (statusText가 없으면 responseText 사용)
-        }
-    });
+    // 진단 입력창 초기화
+    $("#diagnosisInput").val("");
 }
 
 /**
