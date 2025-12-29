@@ -101,7 +101,6 @@ public class ModelController {
 
         String outDir = Paths.get(outputSliceDir, fileId, axis).toString();
         pythonRunnerService.ensureDirExists(outDir);
-        // v파이썬 실행코드
         List<String> cmd = List.of(
                 pythonExec,
                 sliceScriptPath,
