@@ -395,7 +395,7 @@ function renderTabs() {
         // ✅ X 클릭 -> 서버 파일 삭제까지
         $tab.find(".tab-close").on("click", function (e) {
             e.stopPropagation();
-            closeSessionWithServerDelete(fileId);
+            closeSessionLocal(fileId);
         });
 
         $tabs.append($tab);
@@ -404,7 +404,7 @@ function renderTabs() {
 
 /**
  * ✅ 탭 닫기 + 서버 파일 삭제 연동
- */
+    이제는 삭제 하지 않기 때문에 처리 안 함..
 function closeSessionWithServerDelete(fileId) {
     closeSessionLocal(fileId);
 
@@ -423,7 +423,7 @@ function closeSessionWithServerDelete(fileId) {
         }
     });
 }
-
+ */
 /**
  * ✅ 로컬 세션 제거
  */
