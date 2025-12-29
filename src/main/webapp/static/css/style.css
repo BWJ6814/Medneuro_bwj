@@ -232,14 +232,14 @@ body{
   display:flex;
   align-items:center;
 }
-
+/*
 .layout.upload-mode{
   grid-template-columns:
     var(--iconbar-w)
     1fr
     220px   
 }
-
+*/
 /* ✅ 2행에 배치될 요소들 */
 .iconbar,
 .tool-panel,

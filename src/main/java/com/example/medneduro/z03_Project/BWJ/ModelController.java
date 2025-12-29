@@ -136,7 +136,8 @@ public class ModelController {
         try {
             String probe = Files.probeContentType(filePath);
             if (probe != null) mediaType = MediaType.parseMediaType(probe);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         return ResponseEntity.ok()
                 .contentType(mediaType)
@@ -192,12 +193,12 @@ public class ModelController {
 
     /**
      * ✅ (추가) 4) 파일 정리(삭제) API
-     *
+     * <p>
      * 탭 X를 눌렀을 때 호출할 용도:
      * - uploads/{fileId}.nii or .nii.gz 삭제
      * - outputs/slices/{fileId}/... 폴더 통째 삭제
      * - outputs/obj/{fileId}/... 폴더 통째 삭제
-     *
+     * <p>
      * URL: DELETE /api/file/{fileId}
      */
     @DeleteMapping("/file/{fileId}")
@@ -254,13 +255,13 @@ public class ModelController {
         // 역순 정렬: 파일 먼저 삭제 -> 폴더 삭제 가능
         try (var walk = Files.walk(dir)) {
             walk.sorted(Comparator.reverseOrder())
-                .forEach(p -> {
-                    try {
-                        Files.deleteIfExists(p);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to delete: " + p + " / " + e.getMessage(), e);
-                    }
-                });
+                    .forEach(p -> {
+                        try {
+                            Files.deleteIfExists(p);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to delete: " + p + " / " + e.getMessage(), e);
+                        }
+                    });
         }
         return true;
     }
@@ -273,7 +274,8 @@ public class ModelController {
         if (Files.exists(niiGz)) return niiGz;
         return null;
     }
-    @PostMapping(value= "/load-local", consumes = MediaType.APPLICATION_JSON_VALUE)
+
+    @PostMapping(value = "/load-local", consumes = MediaType.APPLICATION_JSON_VALUE)
     /*
         PostMapping : 이 함수는 우체통입니다.
         웹 브라우저(자바스크립트)가 데이터를 보낼 때(Post) 받아주는 역할을 합니다.
@@ -285,27 +287,87 @@ public class ModelController {
         APPLICATION_JSON_VALUE = application/json 이라는 문자열으로 바꿔서 읽어줍니다.
     */
     public Map<String, Object> loadLocalFile(@RequestBody Map<String, String> body) throws IOException {
-        // @RequestBody = 자바스크립트가 보낸 데이터(JSON.stringify(...)) 는 HTTP 요청 본문(Body)이라는 상자에 담겨 옵니다.
-        // throws IOException : 에러가 발생할 수 있다고 경고하는 것 입니다.
-        // 파일처리는 예외가 많이 발생하기에 처리하다가 에러가 나면 호출한 곳으로 throw한다는 뜻입니다. (스프링 부트가 알아서 처리)
-    String filePath = body.get("filePath");
-    Path source = Paths.get(filePath); // String -> Path로 변환
+// @RequestBody = 자바스크립트가 보낸 데이터(JSON.stringify(...)) 는 HTTP 요청 본문(Body)이라는 상자에 담겨 옵니다.
+// throws IOException : 에러가 발생할 수 있다고 경고하는 것 입니다.
+// 파일처리는 예외가 많이 발생하기에 처리하다가 에러가 나면 호출한 곳으로 throw한다는 뜻입니다. (스프링 부트가 알아서 처리)
+        String filePath = body.get("filePath");
+
+        // 문자열 경로를 자바가 다룰 수 있는 Path로 변환시키기 String -> Path로 변환
+        Path source = Paths.get(filePath);
         // Path : 주소를 나타내는 객체
         // Paths.get(문자열) : 글자로 된 주소를 자바가 이해하는 네비게이션 주소로 바꿔주는 기능입니다.
         // 단순 글자(String)일 때는 기능이 없음, Path 전환하면 복사, 이동, 삭제 명령어 가능..
 
-    if (!source.isAbsolute()){
-        source = Paths.get(uploadDir, filePath);
-    }
-    // C:/ 같은 경로가 아니라면 -> 업로더 폴더 경로를 앞에 붙여줌.
+        // 만약 file.nii 처럼 파일명만 왔을 경우.. 기본 업로드 폴더 경로르 앞에 붙여서 완성시키기!
+        if (!source.isAbsolute()) {
+            source = Paths.get(uploadDir, filePath);
+        }
 
-    if (!Files.exists(source)){ // 방어 로직
-        // Files.exists(...) 주소지에 건물이 진짜 있는지 확인하는 기능입니다. 있으면 true 없으면 false를 반환
-        // return Map.of("ok", false, "message","파일이 서버에 없습니다 :" + filePath);
-        return Map.of("ok", false, "message","파일이 서버에 없습니다 :" + source.toString());
-    }
-    // UUID 고유 식별자 - 유일한 난수 ID 생성
-    String fileId = UUID.randomUUID().toString().replace("-","");
+        // [방어 로직] 실제 그 위치에 파일이 없으면 "없다"고 에러를 보냅니다.
+        if (!Files.exists(source)) {
+            // Files.exists(...) 주소지에 건물이 진짜 있는지 확인하는 기능입니다. 있으면 true 없으면 false를 반환
+            // return Map.of("ok", false, "message","파일이 서버에 없습니다 :" + filePath);
+            return Map.of("ok", false, "message", "파일이 서버에 없습니다 :" + source.toString());
+        }
+        
+        // 전체 경로에서 파일 이름만 뚝 떼어내기 (예: "brain_test.nii.gz")
+        String fileName = source.getFileName().toString(); // 파일 이름을 문자열로 변환 시킨 후
+        String ext = "";
+        String fileId = "";
+
+        // 확장자 분리 로직 (.nii.gz 또는 .nii)
+        // String ext = originalName.toLowerCase().endsWith(".nii.gz") ? ".nii.gz" : ".nii";
+        // ID와 꼬리표(ext) 분리하기
+        if (fileName.toLowerCase().endsWith(".nii.gz")) {
+            ext = ".nii.gz";
+            // 파일명에서 확장자를 뺀 나머지를 ID로 일단 가정
+            // 뒤에 7글자(.nii.gz)를 잘라내고 앞부분만 ID로 씁니다
+            fileId = fileName.substring(0, fileName.length() - 7);
+        } else if (fileName.toLowerCase().endsWith(".nii")) {
+            ext = ".nii";
+            // 뒤에 4글자(.nii)를 잘라냅니다.
+            fileId = fileName.substring(0, fileName.length() - 4);
+        } else {
+            ext = "";
+            fileId = fileName; // 확장자가 없으면 전체를 ID로
+        }
+
+        // 내 작업대 (uploaDir)의 절대 경로 가져오기
+        Path uploadDirPath = Paths.get(uploadDir).toAbsolutePath();
+        // 요청된 파일이 들어있는 부모 폴더의 경로 가져오기
+        Path sourceParentPath = source.toAbsolutePath().getParent();
+
+        // 조건: 가져온 파일의 위치가 내 창고(uploadDir)와 똑같다면?
+        // "가져온 파일의 부모 폴더가 내 작업대랑 똑같니?"
+        if (sourceParentPath != null && sourceParentPath.equals(uploadDirPath)) {
+            // 이미 저장된 파일이라면?
+            System.out.println("이미 서버에 있는 폴더입니다. (ID 재사용:" + fileName + ")");
+            // ★ 중요: Files.copy(복사)를 하지 않고 바로 넘어갑니다!
+            // 기존 파일명(UUID)을 그대로 fileId로 사용합니다.
+        } else {
+            // 외부 파일인 경우(바탕화면, usb 등에서 처음 가져온 경우)
+
+            System.out.println("외부 파일입니다. 서버 폴더로 복사합니다.");
+
+            // 1. 고정 ID 생성 (Random이 아님!)
+            // UUID 고유 식별자 - 유일한 난수 ID 생성
+            // 파일의 경로 글자(String)를 재료로 UUID를 만듭니다.
+            // 경로가 같으면 100번 눌러도 항상 똑같은 ID가 나옵니다.
+            fileId = UUID.randomUUID().toString().replace("-", "");
+            // 위 코드에서는 random을 사용했지만, nameUUIDformBytes를 사용해도 됨 둘 다 무방..
+            // 외부 파일은 어차피 한 번만 들어오고 그 뒤로는 저장된 파일로 빠지기 때문에..
+            // 완벽을 추구하려면 nameUUIDFromBytes가 좋음..
+
+            // 2. 복사할 목표 위치 설정 (작업대 + 새ID + 확장자)
+            Path targetPath = Paths.get(uploadDir, fileId + ext);
+
+            // 3. 진짜 복사 수행 (이때만 용량이 늘어남)
+            // 단, 이미 같은 경로로 만든 파일이 있다면 건너 뜀(StatndardCopyOption 덕분에)
+            if (!Files.exists(targetPath)) {
+                Files.copy(source, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+        }
     /*
         새 이름표(ID) 만들기
         고유한 ID를 만드는 과정입니다.
@@ -319,26 +381,98 @@ public class ModelController {
         2) 보안: 파일명에 개인정보가 있을 수 있음 - 서버 경로가 노출되어도 해당 파일이 누구의 것인지 알 수 없음!
         3) 일관성: 한글/공백/특수문자가 있으면 파이썬(AI) 프로그램은 읽다 오류가 발생할 수 있음.. -
             난수는 영문/숫자로만 구성이 되어 있기 때문에 시스템간 통신에 매우 안전!
+            String originalName = source.getFileName().toString();
+            여긴 왜 .replace를 사용하지 않는가..? 실제 이름이라서?
+
+
      */
-    String originalName = source.getFileName().toString(); // 여긴 왜 .replace를 사용하지 않는가..? 실제 이름이라서?
-    String ext = originalName.toLowerCase().endsWith(".nii.gz") ? ".nii.gz" : ".nii";
-    String targetFileName = source.getFileName().toString();
+        // 환자 정보 매칭 (예쁜 이름)
+        // DB에서 이 파일 경로와 관련된 히스토리를 가져오기
+        List<Map<String, String>> historyList = serviceLogin.getHistoryList(filePath);
+        // 기본값 설정하기 (DB에 없을 경우..)
+        String cleanName = "Unknow" + ext;
+        // 비교를 위해 현재 파일명을 변수에 담기
+        String targetFileName = fileName;
 
+        // DB 기록이 있다면? 분석 시작하기!
+        if (historyList != null && !historyList.isEmpty()) {
+            // 1. 환자 이름 가져오기 (리스트의 첫 번째 데이터에서 꺼내기)
+            Map<String, String> firstItem = historyList.get(0);
+            String pName = firstItem.get("patientName");
+            // 대소문자 문제나 null 방지용..
+            if (pName == null) pName = firstItem.get("PATIENTNAME");
+            if (pName == null) pName = "Patient";
 
+            // 2. 순서 찾기
+            // 해당 파일이 몇 번째인가?
+            int seqNum = 1;
+            int totalCount = historyList.size();
+            boolean found = false;
 
+            System.out.println("=== 파일 찾기 디버깅 시작 ===");
+            System.out.println("찾는 파일명: " + targetFileName);
+
+            // 리스트를 하나씩 돌면서 내 파일명과 동일한게 있는지 찾기..
+            for (int i = 0; i < totalCount; i++) {
+                Map<String, String> item = historyList.get(i);
+
+                // DB에 저장된 경로를 가져옵니다.
+                String dbFullPath = item.get("fileName");
+                // null 방지 로직
+                if (dbFullPath == null) dbFullPath = item.get("FILENAME");
+                if (dbFullPath == null) dbFullPath = item.get("IMAGE_FOLDER_PATH");
+                // 경로에서 파일명만 쏙 뽑아오기
+                if (dbFullPath != null) {
+                    String dbFileName = Paths.get(dbFullPath).getFileName().toString();
+                    // 파일을 찾았다면?
+                    if (dbFileName.equals(targetFileName)) {
+                        // 최신순 정렬이므로 전채 개수에서 현재 인덱스를 빼면 순서 1,2,3..으로 나옴!
+                        seqNum = totalCount - i;
+                        found = true;
+                        // 찾았으면 반복문 종료
+                        break;
+                    }
+                }
+            }
+            System.out.println("=== 디버깅 종료 (찾았나? " + found + ") ===");
+
+            // (3) 이름 결정 (예: "홍길동_003.nii")
+            if (!found) {
+                cleanName = pName + "_Unknown" + ext;
+            } else {
+                // %s:문자열, %03d:숫자를 3자리(001) 포맷팅하기
+                cleanName = String.format("%s_%03d%s", pName, seqNum, ext);
+            }
+        }
+
+        // 5. 결과 리턴
+        // 프론트JS에게 JSON 데이터 보내기
+        return Map.of(
+                "ok", true,
+                "fileId", fileId, // 탭을 열 때 이 ID를 사용하기
+                "originalName", cleanName, // 탭 제목에는 예쁜 이름으로 보여주기
+                // 만약 hisotryList가 null이면 빈 리스트를 보내서 js에러 막기..
+                "historyList", historyList != null ? historyList : Collections.emptyList()
+        );
+    }
+}
     /*
         파일이 .nii 인지 .nii.gz (압축파일)인지 확인해서, 복사본에도 똑같은 꼬리표를 붙여줘야 합니다.
         originalName = 원본 파일의 이름을 가져옵니다.
         toLowerCase() = 대문자가 섞여 있을까봐 소문자로 바꿉니다.
-     */
+
     pythonRunnerService.ensureDirExists(uploadDir);
+      */
+
     /*
         폴더가 있으면 그 폴더안에 넣고 없으면 폴더를 새로 생성하는 코드입니다
-     */
     // 복사본이 놓일 "정확한 좌표" 계산
     Path targetPath = Paths.get(uploadDir, fileId + ext);
+
     // 작업대 설정 - 물리적 파일 복사
     Files.copy(source, targetPath, StandardCopyOption.REPLACE_EXISTING);
+    */
+
     /*
         복사할 위치 정하고 복사하기
         Path targetPath (목표 지점 게산) :
@@ -364,7 +498,7 @@ public class ModelController {
         => 로직의 연속성을 위해
         1) 재시도 처리: 사용자가 파일을 로드 -> 실수로 브라우저를 새로고침 -> 똑같은 파일을 다시 보낼 위험이 있음
             이 때, 덮어쓰기 옵션이 존재 -> "파일이 존재합니다" 에러를 방지 및 불완전한 기존 파일을 지우고 새 파일로 교체!
-     */
+
     List<Map<String, String>> historyList = serviceLogin.getHistoryList(filePath);
 
     // 기본값 설정 DB에 환자 정보가 없을 때에 설정...
@@ -423,14 +557,11 @@ public class ModelController {
                 cleanName = String.format("%s_%03d%s", pName, seqNum, ext);
             }
         }
+  */
+
 
     // REST API (Ajax 통신)
-    return Map.of(
-            "ok", true,
-            "fileId",fileId,
-            "originalName",cleanName,
-            "historyList",historyList
-            );
+
     /*
         출력 형식
         {
@@ -451,5 +582,3 @@ public class ModelController {
         ]
 }
     */
-    }
-}
