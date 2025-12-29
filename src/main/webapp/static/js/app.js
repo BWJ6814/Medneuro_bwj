@@ -245,19 +245,23 @@ function setupDragDrop() {
  * - 세션이 없으면 툴패널/핸들 숨김
  */
 function showUploadView() {
+    // 1. 화면 전환: 업로드 박스는 보이고, 2D/3D 뷰어는 숨김
     $("#uploadView").removeClass("hidden");
     $("#analysis2DView").addClass("hidden");
     $("#view3D").addClass("hidden");
 
-    if (activeSessionId) {
-        $("#toolPanel").removeClass("hidden");
-        $("#btnToolToggle").removeClass("hidden");
-    } else {
-        $("#toolPanel").addClass("hidden");
-        $("#btnToolToggle").addClass("hidden");
-    }
-}
+    // 2. [핵심] 무조건 툴패널 보이기 (조건문 삭제함)
+    // 파일이 있든 없든 왼쪽 패널 공간을 차지하게 만듭니다.
+    $("#toolPanel").removeClass("hidden");
+    $("#btnToolToggle").removeClass("hidden");
 
+    // 3. 레이아웃 클래스 정리
+    // 'upload-mode'는 3단으로 줄어드는 클래스이므로 무조건 제거합니다.
+    $("#layoutRoot").removeClass("upload-mode");
+
+    // 툴패널이 열린 상태(.tools-open)를 강제로 적용합니다.
+    $("#layoutRoot").removeClass("tools-collapsed").addClass("tools-open");
+}
 /**
  * ✅ 2D 화면 표시
  */
