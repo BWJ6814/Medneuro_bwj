@@ -76,4 +76,26 @@ public interface Comment2DMapper {
      */
     @Delete("DELETE FROM DIAGNOSIS_COMMENT_2D WHERE COMMENT_ID = #{commentId}")
     int delete(@Param("commentId") Long commentId);
+
+
+
+    @Select("""
+        SELECT
+            COMMENT_ID   AS commentId,
+            MED_MRI_ID   AS medMriId,
+            STAFF_ID     AS staffId,
+            PATIENT_ID   AS patientId,
+            AXIS         AS axis,
+            SLICE_INDEX  AS sliceIndex,
+            X_COORD      AS xCoord,
+            Y_COORD      AS yCoord,
+            CONTENT      AS content,
+            CREATED_AT   AS createdAt
+        FROM DIAGNOSIS_COMMENT_2D
+        WHERE MED_MRI_ID = #{medMriId}
+        ORDER BY CREATED_AT DESC, COMMENT_ID DESC
+        FETCH FIRST 200 ROWS ONLY
+    """)
+    List<Comment2DDto> findByMriId(@Param("medMriId") Long medMriId);
+
 }

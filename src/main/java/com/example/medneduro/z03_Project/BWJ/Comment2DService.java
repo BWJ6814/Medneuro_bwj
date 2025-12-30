@@ -82,4 +82,12 @@ public class Comment2DService {
     public void delete(Long commentId) {
         mapper.delete(commentId);
     }
+
+    public List<Comment2DDto> listByMri(Long medMriId) {
+        if (medMriId == null) {
+            throw new IllegalArgumentException("medMriId is required");
+        }
+        return mapper.findByMriId(medMriId);
+    }
+
 }

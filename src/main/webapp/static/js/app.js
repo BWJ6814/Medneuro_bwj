@@ -333,6 +333,7 @@ function openCommentModal(marker) {
 
         // ✅ 삭제 후 마커 새로고침
         await refreshMarkersForCurrentSlice();
+        await refreshCommentListForCurrentMri();
     };
 
     // ✅ 배경 클릭 시 닫기 + 저장
@@ -391,8 +392,220 @@ function openCommentModal(marker) {
 
         // ✅ [핵심] 저장 후 DB에서 다시 가져와서 화면 갱신
         await refreshMarkersForCurrentSlice();
+        await refreshCommentListForCurrentMri();
     });
 }
+
+/**
+ * ✅ MRI(medMriId) 기준 코멘트 리스트 조회해서 화면(info-card)에 뿌리기
+ * - 서버 API: GET /api/comments/2d/mri?medMriId=...
+ */
+async function refreshCommentListForCurrentMri() {
+    const sid = activeSessionId;
+    const s = sessions.get(sid);
+
+    // ✅ 세션이 없거나, DB 연동된 MRI가 아니면 안내문만 띄움
+    if (!s || !s.medMriId) {
+        renderCommentList([]); // 빈 리스트 렌더
+        return;
+    }
+
+    try {
+        const res = await $.ajax({
+            url: `${API_BASE}/comments/2d/mri`,
+            method: "GET",
+            data: { medMriId: s.medMriId }
+        });
+
+        if (!res || !res.ok) {
+            renderCommentList([]);
+            return;
+        }
+
+        renderCommentList(res.items || []);
+    } catch (err) {
+        console.error("❌ 코멘트 목록 조회 실패:", err);
+        renderCommentList([]);
+    }
+}
+
+/**
+ * ✅ commentList(ul)에 <li>를 “쭉” 만들어 넣는 함수
+ * - XSS/깨짐 방지를 위해 innerHTML로 content를 직접 꽂지 않고
+ *   textContent로 넣는 방식(현업에서 안전하게 많이 씀)
+ */
+function renderCommentList(items) {
+    const $list = $("#commentList");
+    $list.empty();
+
+    if (!items || items.length === 0) {
+        $list.html('<li class="comment-empty">코멘트가 없습니다.</li>');
+        return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    for (const it of items) {
+        const li = document.createElement("li");
+        li.className = "comment-row";
+
+        li.addEventListener("click", () => {
+            moveToComment(it);
+        });
+
+        // ✅ 1줄: 환자명_AXIS
+        const title = document.createElement("div");
+        title.className = "comment-title";
+        const patientName = $("#targetPatientName")
+                .text()
+                .replace(/^\s*-\s*/, "")   // 앞쪽 "- " 제거
+                .trim()                    // 양쪽 공백 제거
+            || "환자";
+        title.textContent = `${patientName}_${it.axis.toUpperCase()}`;
+
+        // ✅ 2줄: 날짜
+        const date = document.createElement("div");
+        date.className = "comment-date";
+        date.textContent = formatCreatedAt(it.createdAt);
+
+        li.appendChild(title);
+        li.appendChild(date);
+        frag.appendChild(li);
+    }
+
+    $list[0].appendChild(frag);
+}
+
+
+async function moveToSliceIndex(targetIndex) {
+    const sid = activeSessionId;
+    const s = sessions.get(sid);
+    if (!s) return;
+
+    if (targetIndex < 0 || targetIndex >= s.sliceCount) {
+        console.warn("❌ sliceIndex 범위 초과:", targetIndex);
+        return;
+    }
+
+    // 현재 인덱스 갱신
+    s.currentIndex = targetIndex;
+
+    const baseUrl = `/api/slices/${s.fileId}/${s.axis}/`;
+
+    // 이미지 교체 → onload에서 마커 다시 그림
+    setMainImage(baseUrl, s.currentIndex);
+
+    // 썸네일 active 처리 + 스크롤
+    const el = document.querySelector(`.thumb[data-idx='${targetIndex}']`);
+    if (el) {
+        el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+}
+/**
+ * ✅ 해당 좌표(x,y)에 가장 가까운 마커를 찾아서 강조
+ * - 기존 마커 DOM을 재사용
+ */
+function focusMarker(x, y) {
+    if (x == null || y == null) return;
+
+    const markers = document.querySelectorAll(".marker");
+    if (!markers.length) return;
+
+    let closest = null;
+    let minDist = Infinity;
+
+    markers.forEach(m => {
+        const mx = Number(m.dataset.x);
+        const my = Number(m.dataset.y);
+        if (isNaN(mx) || isNaN(my)) return;
+
+        const dist = Math.hypot(mx - x, my - y);
+        if (dist < minDist) {
+            minDist = dist;
+            closest = m;
+        }
+    });
+
+    if (!closest) return;
+
+    // ✅ 기존 강조 제거
+    markers.forEach(m => m.classList.remove("focused-marker"));
+
+    // ✅ 새 강조
+    closest.classList.add("focused-marker");
+
+    // 화면 중앙으로 스크롤(선택)
+    closest.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "center"
+    });
+}
+
+
+/**
+ * ✅ 코멘트 클릭 시:
+ * 1) axis 변경
+ * 2) sliceIndex 이동
+ * 3) 마커 위치로 포커싱
+ *
+ * ※ 기존 함수들을 "조합"해서 UX를 만든다
+ */
+/**
+ * ✅ 코멘트 클릭 시:
+ * - axis 변경
+ * - sliceIndex "절대 이동"
+ * - 마커 강조
+ */
+async function moveToComment(comment) {
+    const sid = activeSessionId;
+    const s = sessions.get(sid);
+    if (!s) return;
+
+    const targetAxis = comment.axis;
+    const targetSlice = comment.sliceIndex;
+
+    // 1️⃣ 축 변경 (필요할 때만)
+    if (s.axis !== targetAxis) {
+        await loadSlices(sid, targetAxis);
+        // loadSlices가 끝나면 currentIndex = 0 상태
+    }
+
+    // 2️⃣ 🔥 여기서 절대 이동
+    await moveToSliceIndex(targetSlice);
+
+    // 3️⃣ 해당 슬라이스 마커 로드
+    await refreshMarkersForCurrentSlice();
+
+    // 4️⃣ 해당 좌표로 포커싱
+    focusMarker(comment.xCoord, comment.yCoord);
+}
+
+
+
+/**
+ * ✅ 오라클 Timestamp 문자열이 어떤 형태로 와도 최대한 예쁘게 보여주기
+ * - Date 파싱이 실패하면 원본 문자열 그대로 반환(깨짐 방지)
+ */
+function formatCreatedAt(createdAt) {
+    if (!createdAt) return "";
+
+    const d = new Date(createdAt);
+    if (Number.isNaN(d.getTime())) {
+        return String(createdAt); // 파싱 실패 시 원본
+    }
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+}
+
+
+
 
 async function refreshMarkersForCurrentSlice() {
     console.log("🔄 마커 새로고침 시작...");
@@ -1224,9 +1437,11 @@ function loadServerFile(filePath) {
                 s.patientId = res.patientId;
                 s.staffId   = res.staffId;
             }
+            setActiveSession(fileId);
+            refreshCommentListForCurrentMri();
 
             // [4] 뷰어 활성화
-            setActiveSession(fileId);
+
             openTools();
             show2DView();
 

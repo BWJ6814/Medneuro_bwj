@@ -576,6 +576,17 @@ public class ModelController {
             service.delete(commentId);
             return Map.of("ok", true);
         }
+
+        @GetMapping("/2d/mri")
+        public Map<String, Object> listByMri(@RequestParam Long medMriId) {
+            List<Comment2DDto> items = service.listByMri(medMriId);
+            return Map.of(
+                    "ok", true,
+                    "count", items.size(),
+                    "items", items
+            );
+        }
+
     }
 }
     /*

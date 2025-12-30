@@ -140,9 +140,14 @@
             </div>
         </div>
 
-            <div class="info-card" style="display:flex; flex-direction:column;">
+            <div class="info-card2">
                 <div style="font-weight:bold; border-bottom:1px solid #444; padding-bottom:8px; margin-bottom:8px;">
                     진단 코멘트
+                </div>
+                <div class="info-section">
+                    <ul id="commentList" class="comment-list">
+                        <li style="padding:12px; color:#777;">MRI를 선택하면 코멘트가 표시됩니다.</li>
+                    </ul>
                 </div>
             </div>
 
