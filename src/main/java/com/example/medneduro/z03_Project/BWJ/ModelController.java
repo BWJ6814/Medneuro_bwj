@@ -9,8 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.*;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * ✅ ModelController
@@ -54,17 +57,73 @@ public class ModelController {
         return Map.of("ok", true, "message", "Server is running");
     }
 
-    // 변경사항
+    // 변경사항 
+    // 파일 확장자만 체크할 뿐만 아니라 저장 전에 실제 DICOM/NIfTI 헤더를 검증하는 로직 추가
+    /*
+    1. 매직넘버란? - 지문!
+    파일을 구분할 때는 확장자만 봄 -> 사용자가 임의로 변경 가능 - 해커가 악성코드가 담긴 .exe 파일을 사진.jpg로 바꿔서 올릴 수 있음
+    컴퓨터는 이를 막기 위해 파일의 가장 앞 부분(헤더)에 숨겨진 특수한 바이트 값을 확인하는데, 이것을 매직넘버라고 부름
+
+    NIfTI 파일은 두 가지 버전이 존재, 각각 정해진 위치에 고유한 코드가 있음
+    위치: 파일의 맨 앞부터 344바이트 지점 (오프셋344)
+    값:
+        1) n+1: NIfTI-1 형식을 의미(데이터와 헤더가 합쳐진 .nii)
+        2) ni1: NIfTI-1 형식을 의미(.hdr - 헤더와 데이터 - .img가 나뉜 경우)
+
+    DICOM 파일은 맨 처음에 담겨져 있지 않기에 이 부분을 조심해야 됨
+    Preamble(128 바이트): 파일의 맨 앞 128바이트는 비어 있거나 특정 소프트웨어가 자유롭게 사용할 수 있는 공간.
+    ★ Prefix(4 바이트): 바로 뒤 128~131번 인덱스에 DICM이라는 글자가 등장!
+
+    따라서 new byte[132]만큼 읽을 수 뒤에 4자리만 딱 잘라서 확인..
+    89 50 4E 47 - PNG 이미지 파일의 매직 넘버
+    */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Object> uploadNii(@RequestParam("file") MultipartFile file) throws Exception {
+
+        // 파일 이름
+        String originalName = Objects.requireNonNullElse(file.getOriginalFilename(), "uploaded.nii");
+        String lower = originalName.toLowerCase();
+
+        // 1. 기본적인 파일 존재 여부 체크
         if (file == null || file.isEmpty()) {
             return Map.of("ok", false, "message", "File is empty");
         }
+        // 2. 실제 파일 헤더 검증 로직 추가
+        try(InputStream is = file.getInputStream()) {
+            InputStream finalIs = is;
+            
+            // .gz 압축 파일이라면 압축을 풀어서 내부 매직 넘버를 확인하기
+            if(lower.endsWith(".gz")){
+                // .gz라면 원본(is)을 압축 해제 도구로 감싸서 새로운 빨대 만들기..
+                finalIs = new GZIPInputStream(is);
+            }
+
+            // 넉넉하게 읽기
+            byte[] header = new byte[350];
+            // is가 아니라 압축이 풀리는 finalIs에서 읽기
+            int bytesRead = finalIs.read(header);
+            System.out.println("읽어온 바이트 수:" + bytesRead);
+
+            if(bytesRead < 350 ){
+                return Map.of("ok", false, "message", "유효하지 않은 파일 크기입니다.");
+            }
+
+            // DICOM 여부 확인 (128~131 "DICM")
+            String dicomMagic = new String(Arrays.copyOfRange(header, 128, 132)); // 129~131
+            // BIfTI 여부 확인 (344~346: "n+1 또는 nii")
+            String niftiMagic = new String(Arrays.copyOfRange(header, 344, 347)).trim();
+            System.out.println("최종 검사 - DICOM: [" + dicomMagic + "], NIfTI: [" + niftiMagic + "]");
+
+            boolean isDicom = dicomMagic.equals("DICM");
+            boolean isNifti = niftiMagic.equals("n+1") || niftiMagic.equals("ni1");
+
+            // 둘 다 아니라면 차단시키기
+            if(!isDicom && !isNifti) {
+                return Map.of("ok",false, "message","지원하지 않는 형식이거나 위변조된 파일입니다.");
+            }
+        }
 
         pythonRunnerService.ensureDirExists(uploadDir);
-
-        String originalName = Objects.requireNonNullElse(file.getOriginalFilename(), "uploaded.nii");
-        String lower = originalName.toLowerCase();
 
         String ext;
         if (lower.endsWith(".nii.gz")) ext = ".nii.gz";
@@ -74,6 +133,7 @@ public class ModelController {
         String fileId = UUID.randomUUID().toString().replace("-", "");
         Path savedPath = Paths.get(uploadDir, fileId + ext);
 
+        // 서버에 저장!!
         file.transferTo(savedPath.toFile());
 
         return Map.of(

