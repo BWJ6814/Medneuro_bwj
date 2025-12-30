@@ -443,23 +443,23 @@ body{
 /* ✅ (수정 2) 큰 이미지 영역: 체감 2배로 키움
    - flex:1로 썸네일 접으면 자동으로 더 커짐 */
 .image-stage{
-  position:relative;
-  flex:1;
-  min-height: 0;
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  background:black;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
+    position: relative; /* ⭐ 중요! */
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
-.image-stage img{
-  width:75%;
-  height:75%;
-  object-fit:contain;
-  display: block;
-}
+/*.image-stage img{*/
+/*  width:75%;*/
+/*  height:75%;*/
+/*  object-fit:contain;*/
+/*  display: block;*/
+/*}*/
 .hint{
   position:absolute;
   right:10px;
@@ -1049,6 +1049,16 @@ background-color: #262629
 }
 .drawer-overlay.show { opacity: 1; visibility: visible; }
 
+.image-wrapper{
+    position: static;
+    display: inline-block;
+}
+
+.image-wrapper img {
+    width: 75%;
+    height: 75%;
+    object-fit: contain;
+}
 
 .marker {
     position: absolute;
@@ -1057,11 +1067,13 @@ background-color: #262629
     transform: translate(-50%, -50%);
     filter: drop-shadow(0 8px 4px rgba(0,0,0,0.45));
     z-index: 10;
+    pointer-events: auto; /* 클릭 가능하게 */
 }
 
 .marker:hover {
     transform: translate(-50%, -50%) scale(1.15);
     filter: drop-shadow(0 12px 10px rgba(0,0,0,0.65));
+    cursor: pointer;
 }
 
 .comment-modal-overlay {

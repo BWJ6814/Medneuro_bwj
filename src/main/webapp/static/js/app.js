@@ -56,23 +56,22 @@ $(document).ready(function () {
     image.addEventListener("contextmenu", function (e) {
         e.preventDefault();
 
-        // 실제 화면에 그려진 이미지 위치
         const rect = image.getBoundingClientRect();
 
-        // 이미지 내부 좌표 (픽셀)
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        // 이미지 밖 클릭 방지 (중요)
         if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
             return;
         }
 
-        // 정규화 좌표 (DB 저장용)
         const xRatio = x / rect.width;
         const yRatio = y / rect.height;
 
-        addMarker(xRatio, yRatio);
+        console.log(`🖱️ 우클릭 위치: (${xRatio.toFixed(3)}, ${yRatio.toFixed(3)})`);
+
+        // ✅ 빈 코멘트로 임시 마커 생성 (DB 저장 안 됨)
+        addMarker(xRatio, yRatio, null, "");
     });
 
 
@@ -255,24 +254,45 @@ function initCommentEvents() {
     });
 }
 
-function addMarker(xRatio, yRatio) {
-    const imgRect = image.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
+function addMarker(xRatio, yRatio, commentId=null, content="") {
+    // ✅ 1. wrapper(image-stage) 기준으로 통일
+    const wrapper = document.querySelector(".image-stage");
+    const img = document.getElementById("mainSlice");
 
-    // 현재 화면 기준 픽셀 좌표
-    const x = imgRect.left - stageRect.left + (xRatio * imgRect.width);
-    const y = imgRect.top - stageRect.top + (yRatio * imgRect.height);
+    if (!wrapper || !img) {
+        console.error("❌ wrapper 또는 img를 찾을 수 없습니다.");
+        return;
+    }
 
+    // ✅ 2. 이미지와 wrapper의 위치/크기 가져오기
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+
+    // ✅ 3. wrapper 내에서 이미지의 상대 위치 계산
+    const imgOffsetX = imgRect.left - wrapperRect.left;
+    const imgOffsetY = imgRect.top - wrapperRect.top;
+
+    // ✅ 4. 정규화 좌표를 이미지 기준 픽셀로 변환
+    const x = imgOffsetX + (xRatio * imgRect.width);
+    const y = imgOffsetY + (yRatio * imgRect.height);
+
+    // ✅ 5. 마커 생성
     const marker = document.createElement("img");
-    marker.src = "../comment.png";
     marker.src = "/static/comment.png";
     marker.className = "marker";
 
+    // ✅ 6. wrapper 기준 절대 위치로 배치
     marker.style.left = `${x}px`;
     marker.style.top = `${y}px`;
-    marker.dataset.comment = "";
 
-    stage.appendChild(marker);
+    marker.dataset.xCoord = String(xRatio);
+    marker.dataset.yCoord = String(yRatio);
+    marker.dataset.commentId = commentId ? String(commentId) : "";
+    marker.dataset.comment = content || "";
+
+    wrapper.appendChild(marker);
+
+    console.log(`✅ 마커 추가: (${xRatio.toFixed(3)}, ${yRatio.toFixed(3)}) → (${x.toFixed(1)}px, ${y.toFixed(1)}px)`);
 }
 
 function initDomRef() {
@@ -299,22 +319,115 @@ function openCommentModal(marker) {
 
     const textarea = overlay.querySelector("textarea");
 
+    // ✅ 삭제
+    overlay.querySelector(".btn-delete").onclick = async () => {
+        const commentId = marker.dataset.commentId;
+        if (commentId) {
+            await $.ajax({
+                url: `${API_BASE}/comments/2d/${commentId}`,
+                method: "DELETE"
+            });
+        }
 
-    // 삭제
-    overlay.querySelector(".btn-delete").onclick = () => {
-        marker.remove();
         overlay.remove();
+
+        // ✅ 삭제 후 마커 새로고침
+        await refreshMarkersForCurrentSlice();
     };
 
+    // ✅ 배경 클릭 시 닫기 + 저장
+    overlay.addEventListener("click", async (e) => {
+        if (e.target !== overlay) return;
 
-    // 배경 클릭 시 닫기
-    overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) overlay.remove();
-        marker.dataset.comment = textarea.value;
+        const content = textarea.value;
+
+        const sid = activeSessionId;
+        const s = sessions.get(sid);
+
+        if (!s) {
+            alert("세션이 없습니다. 파일을 다시 선택해주세요.");
+            overlay.remove();
+            return;
+        }
+
+        if (!s.medMriId) {
+            console.error("❌ medMriId가 비어있음. 현재 세션:", s);
+            alert("medMriId가 없습니다.");
+            overlay.remove();
+            return;
+        }
+
+        if (!s.axis) {
+            alert("축(Axis)을 먼저 선택해주세요.");
+            overlay.remove();
+            return;
+        }
+
+        const payload = {
+            commentId: marker.dataset.commentId ? Number(marker.dataset.commentId) : null,
+            medMriId: s.medMriId,
+            staffId: s.staffId,
+            patientId: s.patientId,
+            axis: s.axis,
+            sliceIndex: s.currentIndex,
+            xCoord: Number(marker.dataset.xCoord),
+            yCoord: Number(marker.dataset.yCoord),
+            content: content
+        };
+
+        console.log("💾 저장 데이터:", payload);
+
+        // ✅ 서버 저장
+        const res = await $.ajax({
+            url: `${API_BASE}/comments/2d`,
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload)
+        });
+
+        console.log("✅ 서버 응답:", res);
+
+        overlay.remove();
+
+        // ✅ [핵심] 저장 후 DB에서 다시 가져와서 화면 갱신
+        await refreshMarkersForCurrentSlice();
     });
 }
 
+async function refreshMarkersForCurrentSlice() {
+    console.log("🔄 마커 새로고침 시작...");
 
+    clearAllMarkers();
+    const sid = activeSessionId;
+    const s = sessions.get(sid);
+    if (!s || !s.medMriId || !s.axis) return;
+
+    const res = await $.ajax({
+        url: `${API_BASE}/comments/2d`,
+        method: "GET",
+        data: {
+            medMriId: s.medMriId,
+            axis: s.axis,
+            sliceIndex: s.currentIndex
+        }
+    });
+
+    if (!res || !res.ok) return;
+
+    for (const item of (res.items || [])) {
+        // ✅ 서버가 xCoord로 주든 x_coord로 주든 둘 다 받게 처리
+        const xRatio = item.xCoord ?? item.x_coord;
+        const yRatio = item.yCoord ?? item.y_coord;
+
+        // ✅ 방어: 좌표가 없으면 addMarker에서 터지니까 여기서 걸러버림
+        if (xRatio == null || yRatio == null) {
+            console.warn("⚠️ 좌표 누락 item:", item);
+            continue;
+        }
+
+        addMarker(Number(xRatio), Number(yRatio), item.commentId, item.content);
+    }
+}
 
 /**
  * ✅ 서버 상태 체크
@@ -446,7 +559,11 @@ function createSession(fileId, fileName) {
         fileName,
         axis: null,
         sliceCount: 0,
-        currentIndex: 0
+        currentIndex: 0,
+
+        medMriId: null,
+        patientId: null,
+        staffId: null
     });
     renderTabs();
 }
@@ -456,6 +573,7 @@ function createSession(fileId, fileName) {
  */
 function setActiveSession(fileId) {
     activeSessionId = fileId;
+    clearAllMarkers();
     renderTabs();
 
     const s = sessions.get(fileId);
@@ -526,25 +644,25 @@ function renderTabs() {
 
 /**
  * ✅ 탭 닫기 + 서버 파일 삭제 연동
-    이제는 삭제 하지 않기 때문에 처리 안 함..
-function closeSessionWithServerDelete(fileId) {
-    closeSessionLocal(fileId);
+ 이제는 삭제 하지 않기 때문에 처리 안 함..
+ function closeSessionWithServerDelete(fileId) {
+ closeSessionLocal(fileId);
 
-    $.ajax({
-        url: `${API_BASE}/file/${fileId}`,
-        method: "DELETE",
-        success: function (res) {
-            if (!res.ok) {
-                console.warn("서버 파일 삭제 실패:", res);
-                alert("⚠️ 서버 파일 삭제 실패(그래도 탭은 닫힘)\n" + (res.message || ""));
-            }
-        },
-        error: function (xhr) {
-            console.warn("서버 파일 삭제 API 에러:", xhr.responseText || xhr.statusText);
-            alert("⚠️ 서버 파일 삭제 API 에러(그래도 탭은 닫힘)\n" + (xhr.responseText || xhr.statusText));
-        }
-    });
-}
+ $.ajax({
+ url: `${API_BASE}/file/${fileId}`,
+ method: "DELETE",
+ success: function (res) {
+ if (!res.ok) {
+ console.warn("서버 파일 삭제 실패:", res);
+ alert("⚠️ 서버 파일 삭제 실패(그래도 탭은 닫힘)\n" + (res.message || ""));
+ }
+ },
+ error: function (xhr) {
+ console.warn("서버 파일 삭제 API 에러:", xhr.responseText || xhr.statusText);
+ alert("⚠️ 서버 파일 삭제 API 에러(그래도 탭은 닫힘)\n" + (xhr.responseText || xhr.statusText));
+ }
+ });
+ }
  */
 /**
  * ✅ 로컬 세션 제거
@@ -575,6 +693,7 @@ function closeSessionLocal(fileId) {
 function loadSlices(fileId, axis) {
     const s = sessions.get(fileId);
     if (!s) return;
+    clearAllMarkers();
 
     s.axis = axis;
     $("#viewerTitle").text(axis.toUpperCase() + " View 로딩중...");
@@ -611,13 +730,23 @@ function loadSlices(fileId, axis) {
     });
 }
 
+function clearAllMarkers(){
+    document.querySelectorAll(".marker").forEach(m => m.remove());
+}
+
 /**
  * ✅ 메인 이미지 변경
  */
 function setMainImage(baseUrl, index) {
     const filename = `slice_${String(index).padStart(3, "0")}.png`;
     const url = `${baseUrl}${filename}`;
-    $("#mainSlice").attr("src", url);
+    const img = document.getElementById("mainSlice");
+    //$("#mainSlice").attr("src", url);
+    img.onload = null;
+    img.onload = () =>{
+        refreshMarkersForCurrentSlice();
+    }
+    img.src = url;
 
     $(".thumb").removeClass("active");
     $(`.thumb[data-idx='${index}']`).addClass("active");
@@ -1091,6 +1220,9 @@ function loadServerFile(filePath) {
             if (s) {
                 s.sourcePath = filePath; // ★ 중요: 원본 경로 저장
                 s.historyList = res.historyList; // 환자 리스트 저장
+                s.medMriId  = res.medMriId;
+                s.patientId = res.patientId;
+                s.staffId   = res.staffId;
             }
 
             // [4] 뷰어 활성화
