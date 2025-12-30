@@ -1055,14 +1055,14 @@ background-color: #262629
 }
 
 .image-wrapper img {
-    width: 75%;
-    height: 75%;
-    object-fit: contain;
+    transform: scale(2);           /* ← 최소 2배 */
+    transform-origin: center;      /* 중앙 기준 확대 */
+    image-rendering: crisp-edges;  /* MRI 선명도 유지 */
 }
 
 .marker {
     position: absolute;
-    width: 35px !important;
+    width: 25px !important;
     height: 35px !important;
     transform: translate(-50%, -50%);
     filter: drop-shadow(0 8px 4px rgba(0,0,0,0.45));
