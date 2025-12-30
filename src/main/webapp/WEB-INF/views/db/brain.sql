@@ -458,47 +458,4 @@ ORDER BY m.UPLOAD_DT DESC;
 SELECT * fROM GENERAL;
 SELECT * fROM Integrated_Account;
 SELECT * fROM MEDICAL_MRI_FOLDER;
-SELECT * FROM MRI_ACCESS_LOG;
-
--- 테이블에 IP_ADDRESS 컬럼 추가
-ALTER TABLE MRI_ACCESS_LOG ADD IP_ADDRESS VARCHAR2(45);
--- NOT NULL 추가
-ALTER TABLE MRI_ACCESS_LOG MODIFY (IP_ADDRESS VARCHAR2(45) DEFAULT '0.0.0.0' NOT NULL);
--- 디폴트 값을 주어 이미 없는 행들도 처리되게 만들기..
-ALTER TABLE MRI_ACCESS_LOG MODIFY (IP_ADDRESS VARCHAR2(45) DEFAULT '0.0.0.0' );
--- CEHCK 제약 조건 추가
-ALTER TABLE MRI_ACCESS_LOG
-    ADD CONSTRAINT chk_ip_v4_v6
-        CHECK (
-            REGEXP_LIKE(IP_ADDRESS, '^([0-9]{1,3}\.){3}[0-9]{1,3}$') -- IPv4 형식
-                OR IP_ADDRESS LIKE '%:%' -- IPv6는 콜론(:)을 포함함 (앺 검증에서 처리하기)
-            );
-
 commit;
-/*
- 이게 IPv6전체를 커버하는 레거시 패턴
- 이 정규식은 IPv6 전체 표기법 + IPv4-mapped IPv6 주소까지 커버
-
- 그렇기 때문에 애플리케이션 검증용으로 두는게 일반적..
-
-^(
-  ([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|
-  ([0-9A-Fa-f]{1,4}:){1,7}:|
-  ([0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|
-  ([0-9A-Fa-f]{1,4}:){1,5}(:[0-9A-Fa-f]{1,4}){1,2}|
-  ([0-9A-Fa-f]{1,4}:){1,4}(:[0-9A-Fa-f]{1,4}){1,3}|
-  ([0-9A-Fa-f]{1,4}:){1,3}(:[0-9A-Fa-f]{1,4}){1,4}|
-  ([0-9A-Fa-f]{1,4}:){1,2}(:[0-9A-Fa-f]{1,4}){1,5}|
-  [0-9A-Fa-f]{1,4}:((:[0-9A-Fa-f]{1,4}){1,6})|
-  :((:[0-9A-Fa-f]{1,4}){1,7}|:)|
-  fe80:(:[0-9A-Fa-f]{0,4}){0,4}%[0-9A-Za-z]{1,}|
-  ::(ffff(:0{1,4}){0,1}:){0,1}
-  ((25[0-5]|(2[0-4]|1{0,1}[0-9])?[0-9])\.){3,3}
-  (25[0-5]|(2[0-4]|1{0,1}[0-9])?[0-9])|
-  ([0-9A-Fa-f]{1,4}:){1,4}:
-  ((25[0-5]|(2[0-4]|1{0,1}[0-9])?[0-9])\.){3,3}
-  (25[0-5]|(2[0-4]|1{0,1}[0-9])?[0-9])
-)$
-
-
-*/
