@@ -1,4 +1,4 @@
-package com.example.medneduro.z03_Project.Minsu;
+package com.example.medneduro.z03_Project.Hong;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
