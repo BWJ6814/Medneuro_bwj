@@ -11,14 +11,14 @@
 const API_BASE = `/api`;
 
 /**
- * ✅ [공통 함수] 파일명 예쁘게 변환하기 (Master Key)
- * * @param {string} rawName      - 원본 파일명 (UUID 포함)
+ * ✅ [수정완료] 파일명 예쁘게 변환하기
+ * @param {string} name         - 원본 파일명 (UUID 포함)
  * @param {string} patientName  - 환자 이름
- * @param {number} index        - 현재 파일의 인덱스 (0부터 시작)
+ * @param {number} index        - 현재 파일의 인덱스
  * @param {number} totalCount   - 전체 파일 개수
- * @returns {string}            - 변환된 이름 (예: 홍길동_003.nii)
+ * @param {boolean} isDescending - true: 역순(3,2,1 - 최근리스트용), false: 정순(1,2,3 - 모달용)
  */
-function getPrettyName(name, patientName, index, totalCount) {
+function getPrettyName(name, patientName, index, totalCount, isDescending = false) {
     // 1. 안전장치 (이름이 없으면 Unknown)
     const pName = patientName || "Unknown";
 
@@ -28,7 +28,16 @@ function getPrettyName(name, patientName, index, totalCount) {
 
     // 3. 번호 매기기 (역순: 최신 파일이 높은 번호)
     // 예: 총 3개일 때 -> 0번(최신) = 3, 1번 = 2, 2번 = 1
-    const seqNum = totalCount - index;
+    let seqNum;
+    if (isDescending) {
+        // 최근 리스트용 (최신이 맨 위니까, 전체 개수부터 줄어들어야 함)
+        // 예: 총 3개일 때 -> 인덱스 0(맨위) = 3번 파일
+        seqNum = totalCount - index;
+    } else {
+        // 모달창용 (과거가 맨 위니까, 1부터 늘어나야 함)
+        // 예: 총 3개일 때 -> 인덱스 0(맨위) = 1번 파일
+        seqNum = index + 1;
+    }
     const seqStr = String(seqNum).padStart(3, "0"); // 1 -> "001"
 
     // 4. 합치기
@@ -1295,7 +1304,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // [★수정] 공통 함수(getPrettyName)를 호출해서 예쁜 이름 만들기
             // (원본파일명, 환자이름, 현재순서, 전체개수)
-            const displayName = getPrettyName(p.fileName, patient.name, index, patient.files.length);
+            const displayName = getPrettyName(p.fileName, patient.name, index, patient.files.length, false);
 
             // 3. 의사가 확인했는지(lastCheck) 여부에 따라 마크 표시
             // 삼항 연산자: (조건) ? 참일때 : 거짓일때
@@ -1366,6 +1375,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnClose) btnClose.addEventListener('click', closeModal);
     if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
+    const btnSelect = document.getElementById('selectBtn');
+    if (btnSelect) {
+        btnSelect.addEventListener('click', function() {
+            openModal(); // 모달 열기 함수 실행
+        });
+    }
 
     // [실행]
     renderPatientList(groupedData); // 왼쪽 리스트(목록) 그리기
@@ -1495,6 +1510,8 @@ function updateHistoryList(historyList, currentFileName) {
     // 1. DOM 요소 선택 : 리스트를 집어넣을 HTML 컨테이너 (div)를 가져옴
     const $nameSpan =$("#targetPatientName");
 
+
+
     $container.empty(); // 기존 내용(안내문구 등) 지우기
     // 2. 초기화 : 기존에 표시되어 있던 리스트나 안내 문구를 싹 지웁니다.
 
@@ -1531,7 +1548,7 @@ function updateHistoryList(historyList, currentFileName) {
         // item.fileName이 있으면 쓰고, 없으면 item.FILENAME을 쓴다
         const name = item.fileName || item.FILENAME || item.IMAGE_FOLDER_PATH;
         const date = item.uploadDt || item.UPLOADDT || item.UPLOAD_DT;
-        const displayName = getPrettyName(name, pName, index, historyList.length);
+        const displayName = getPrettyName(name, pName, index, historyList.length, true);
 
 
         // 조건부 스타일링 - 현재 보고 있는 파일인지 확인
@@ -1544,16 +1561,18 @@ function updateHistoryList(historyList, currentFileName) {
         // HTML 조립 (심플하게) 템플릿 리터럴(백틱) 을 사용하여 동적 HTML 생성
         // onclick 이벤트 : 클릭 시 다시 loadServerFile을 호출하여 해당 파일로 화면 전환 (재귀적 구조)
         const html = `
-            <div class="mini-hist-item" onclick="loadServerFile('${name}')" style="cursor:pointer; padding:6px 0; border-bottom:1px solid #333;">
+            <div class="mini-hist-item" onclick="loadServerFile('${name}')" 
+                 style="cursor:pointer; padding:8px 4px; border-bottom:1px solid #333; width:100%; text-align:left; box-sizing:border-box;">
                 
-                <div style="font-size:0.85rem; ${activeStyle}" title="${name}">
+                <div style="font-size:0.85rem; ${activeStyle}; margin-bottom:4px; width:100%;">
                     ${displayName}
                 </div>
                 
-                <div style="font-size:0.75rem; color:#666;">${date}</div>
+                <div style="font-size:0.75rem; color:#666; width:100%;">
+                    ${date}
+                </div>
             </div>
         `;
-
         // 5. DOM 삽입 : 조립된 HTML 조각을 컨테이너 끝에 추가합니다.
         $container.append(html);
     });

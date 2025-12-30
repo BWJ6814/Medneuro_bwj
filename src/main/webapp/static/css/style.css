@@ -998,6 +998,25 @@ background-color: #262629
 .drawer-body::-webkit-scrollbar { width: 8px; background-color: #2E3338; }
 .drawer-body::-webkit-scrollbar-thumb { background-color: #202225; border-radius: 4px; }
 
+#historyList{
+    padding: 0;
+    margin: 0;
+    margin-top : 10px;
+    list-style: none; // 혹시 모를 점(bullet) 제거
+    display: block;   // 플렉스 중앙 정렬 방지
+    width: 100%;
+}
+
+/* ✅ 리스트 아이템 기본 스타일 (애니메이션 효과용) */
+.mini-hist-item {
+    transition: background-color 0.2s ease; /* 색상이 부드럽게 바뀌도록 설정 */
+}
+
+/* ✅ 마우스 올렸을 때 (Hover) 효과 */
+.mini-hist-item:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important; /* 약간 밝은 회색으로 변경 */
+    border-radius: 4px; /* 모서리를 살짝 둥글게 (선택사항) */
+}
 
 .recent-list { list-style: none; padding: 0; margin: 0; }
 
