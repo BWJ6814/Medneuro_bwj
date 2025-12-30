@@ -22,7 +22,8 @@ import java.util.zip.GZIPInputStream;
 @RestController
 @RequestMapping("/api")
 public class ModelController {
-
+    @Autowired
+    private Comment2DService comment2DService;
     private final PythonRunnerService pythonRunnerService;
     @Autowired
 
@@ -351,7 +352,6 @@ public class ModelController {
 // throws IOException : 에러가 발생할 수 있다고 경고하는 것 입니다.
 // 파일처리는 예외가 많이 발생하기에 처리하다가 에러가 나면 호출한 곳으로 throw한다는 뜻입니다. (스프링 부트가 알아서 처리)
         String filePath = body.get("filePath");
-
         // 문자열 경로를 자바가 다룰 수 있는 Path로 변환시키기 String -> Path로 변환
         Path source = Paths.get(filePath);
         // Path : 주소를 나타내는 객체
@@ -505,15 +505,137 @@ public class ModelController {
             }
         }
 
-        // 5. 결과 리턴
-        // 프론트JS에게 JSON 데이터 보내기
+
+        Long medMriId = null;
+        String staffId = null;
+        String patientId = null;
+
+        List<Map<String, String>> historyListWithIds = serviceLogin.getHistoryListWithIds(filePath);
+        if (historyListWithIds != null && !historyListWithIds.isEmpty()) {
+            System.out.println("✅ if문 시작 - historyListWithIds 개수: " + historyListWithIds.size());
+
+            // ★ 첫 row 기준으로 가져오기
+            Map<?, ?> row = historyListWithIds.get(0);
+
+            // 디버깅: row 내용 전체 출력
+            System.out.println("📦 row 내용: " + row);
+
+            // MED_MRI_ID 추출
+            Object medObj = row.get("MED_MRI_ID");
+            if (medObj == null) medObj = row.get("medMriId");
+
+            if (medObj != null) {
+                try {
+                    medMriId = Long.valueOf(String.valueOf(medObj));
+                    System.out.println("✅ medMriId: " + medMriId);
+                } catch (Exception e) {
+                    System.err.println("❌ medMriId 변환 실패: " + e.getMessage());
+                }
+            }
+
+            // STAFF_ID 추출
+            Object staffObj = row.get("STAFF_ID");
+            if (staffObj == null) staffObj = row.get("staffId");
+
+            if (staffObj != null) {
+                staffId = String.valueOf(staffObj);
+                System.out.println("✅ staffId: " + staffId);
+            }
+
+            // PATIENT_ID 추출
+            Object patientObj = row.get("PATIENT_ID");
+            if (patientObj == null) patientObj = row.get("patientId");
+
+            if (patientObj != null) {
+                patientId = String.valueOf(patientObj);
+                System.out.println("✅ patientId: " + patientId);
+            }
+        }
+
+        // 최종 null 체크 (디버깅용)
+        if (medMriId == null) {
+            System.out.println("❌ medMriId is null");
+        }
+        if (staffId == null) {
+            System.out.println("❌ staffId is null");
+        }
+        if (patientId == null) {
+            System.out.println("❌ patientId is null");
+        }
+
         return Map.of(
                 "ok", true,
                 "fileId", fileId, // 탭을 열 때 이 ID를 사용하기
                 "originalName", cleanName, // 탭 제목에는 예쁜 이름으로 보여주기
                 // 만약 hisotryList가 null이면 빈 리스트를 보내서 js에러 막기..
-                "historyList", historyList != null ? historyList : Collections.emptyList()
+                "historyList", historyList != null ? historyList : Collections.emptyList(),
+                "medMriId", medMriId,
+                "staffId", staffId,
+                "patientId", patientId
         );
+    }
+
+    @RestController
+    @RequestMapping("/api/comments")
+    public class DiagnosisComment2DController {
+
+        /**
+         * ✔ Service 의존성
+         * - final + 생성자 주입 (현업 표준)
+         */
+        private final Comment2DService service;
+
+        /**
+         * ✔ 생성자 주입
+         * - Lombok 없이 직접 작성
+         * - Spring이 자동으로 Bean 주입
+         */
+        public DiagnosisComment2DController(Comment2DService service) {
+            this.service = service;
+        }
+
+        /**
+         * ✅ 저장 (신규 / 수정)
+         * - RequestBody JSON → DTO 자동 바인딩
+         * - 반환: { ok: true, commentId: xxx }
+         */
+        @PostMapping("/2d")
+        public Map<String, Object> save(@RequestBody Comment2DDto dto) {
+            Long id = service.save(dto);
+            return Map.of(
+                    "ok", true,
+                    "commentId", id
+            );
+        }
+
+        /**
+         * ✅ 조회 (해당 슬라이스의 코멘트 목록)
+         * - QueryString 기반 파라미터 바인딩
+         */
+        @GetMapping("/2d")
+        public Map<String, Object> list(
+                @RequestParam Long medMriId,
+                @RequestParam String axis,
+                @RequestParam Integer sliceIndex
+        ) {
+            List<Comment2DDto> list =
+                    service.list(medMriId, axis, sliceIndex);
+
+            return Map.of(
+                    "ok", true,
+                    "items", list
+            );
+        }
+
+        /**
+         * ✅ 삭제
+         * - REST 규칙에 맞게 DELETE 사용
+         */
+        @DeleteMapping("/2d/{commentId}")
+        public Map<String, Object> delete(@PathVariable Long commentId) {
+            service.delete(commentId);
+            return Map.of("ok", true);
+        }
     }
 }
     /*

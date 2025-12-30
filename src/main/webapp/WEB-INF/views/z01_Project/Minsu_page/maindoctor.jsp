@@ -95,7 +95,7 @@
 
                 <div class="viewer-body">
                     <div class="image-stage">
-                        <img id="mainSlice" alt="SELECT AXIS"/>
+                        <div class="image-wrapper"><img id="mainSlice" alt="SELECT AXIS"/></div>
                         <div id="sliceHint" class="hint">휠로 이동 </div>
                     </div>
                 </div>
