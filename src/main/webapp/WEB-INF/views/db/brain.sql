@@ -459,3 +459,9 @@ SELECT * fROM GENERAL;
 SELECT * fROM Integrated_Account;
 SELECT * fROM MEDICAL_MRI_FOLDER;
 commit;
+
+SELECT column_name
+FROM all_tab_columns
+WHERE table_name = 'MEDICAL_MRI_FOLDER';
+
+

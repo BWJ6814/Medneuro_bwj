@@ -113,7 +113,7 @@ COUNT(*) 외에도 MAX(), MIN(), SUM(), AVG() 같은 함수를 사용할 때!
 @Select("""
         SELECT 
             m.MED_MRI_ID          AS medMriId,  -- MRI 고유 번호 (나중에 파일 로딩할 때 사용할 예정)
-            m.IMAGE_FOLDER_PATH   AS fileName,  -- 파일 경로
+            m.IMAGE_FILE_PATH   AS fileName,  -- 파일 경로
             m.AI_ANALYSIS_STATUS  AS status,    -- AI 분석 상태(PENDING, COMPLETED 등)
             TO_CHAR(m.UPLOAD_DT, 'YYYY-MM-DD') AS uploadDt, -- 날짜를 해당 패턴의 문자열로 치환
             p.PATIENT_NAME        AS patientName,   -- 환자 이름(UI 출력)
@@ -190,7 +190,7 @@ List<MriListM> getMriList(String loginId);
 
     @Select("""
     SELECT 
-        m.IMAGE_FOLDER_PATH                        AS "fileName",
+        m.IMAGE_FILE_PATH                        AS "fileName",
         TO_CHAR(m.UPLOAD_DT, 'YYYY-MM-DD HH24:MI') AS "uploadDt",
         p.PATIENT_NAME                             AS "patientName",
         p.GENDER                                   AS "gender",
@@ -200,7 +200,7 @@ List<MriListM> getMriList(String loginId);
     WHERE m.PATIENT_ID IN (
         SELECT sub.PATIENT_ID
         FROM MEDICAL_MRI_FOLDER sub 
-        WHERE sub.IMAGE_FOLDER_PATH = #{currentFilePath}
+        WHERE sub.IMAGE_FILE_PATH = #{currentFilePath}
         AND ROWNUM = 1 
     )
     ORDER BY m.UPLOAD_DT DESC
@@ -212,7 +212,7 @@ List<MriListM> getMriList(String loginId);
     SELECT 
         -- 1. MRI 파일 정보
         m.MED_MRI_ID                               AS "MED_MRI_ID",
-        m.IMAGE_FOLDER_PATH                        AS "fileName",
+        m.IMAGE_FILE_PATH                        AS "fileName",
         TO_CHAR(m.UPLOAD_DT, 'YYYY-MM-DD HH24:MI') AS "uploadDt",
         
         -- 2. 환자 상세 정보
@@ -230,7 +230,7 @@ List<MriListM> getMriList(String loginId);
     WHERE m.PATIENT_ID IN (
         SELECT sub.PATIENT_ID
         FROM MEDICAL_MRI_FOLDER sub 
-        WHERE sub.IMAGE_FOLDER_PATH = #{currentFilePath}
+        WHERE sub.IMAGE_FILE_PATH = #{currentFilePath}
         AND ROWNUM = 1 
     )
     ORDER BY m.UPLOAD_DT DESC
