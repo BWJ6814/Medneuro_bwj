@@ -1,3 +1,7 @@
+## 포트폴리오·상세 문서
+
+**기획·배경·분석·설계·요구사항·화면 설계·ERD·시연 영상·테스트·아키텍처 등 상세 내용은 아래 GitHub Pages 사이트에 정리되어 있습니다.**
+
 [https://bwj6814.github.io/medneuro_portfolio/](https://bwj6814.github.io/medneuro_portfolio/) — GitHub Pages에 올린 MedNeuro 소개·발표 자료 사이트이며, **상세 내용(화면 설계, 시연 타임라인, 아키텍처 등)은 모두 여기를 기준으로 보시면 됩니다.**
 
 아래는 이 저장소용 요약입니다.
